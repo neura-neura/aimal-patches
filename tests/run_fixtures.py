@@ -38,7 +38,7 @@ for app, package, patch in [
     run("adb", "install", "-r", apk)
     run("adb", "shell", "am", "force-stop", package)
     run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt")
-    run("adb", "shell", "am", "start", "-n", package + "/fixture.TestActivity", "--ez", "fonts", str(args.fonts).lower())
+    run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/fixture.TestActivity", "--ez", "fonts", str(args.fonts).lower())
     files = ["fixture-result.txt"] + (["font-result.txt"] if args.fonts else [])
     for file in files:
         deadline = time.monotonic() + 55

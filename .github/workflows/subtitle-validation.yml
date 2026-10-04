@@ -41,12 +41,16 @@ jobs:
           name: subtitle-bundle
           path: bundle
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install fixture build tools and Morphe Desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           sdkmanager 'platforms;android-35' 'build-tools;35.0.1'
           gh release download v1.18.0 -R MorpheApp/morphe-desktop --pattern '*-all.jar' --dir "$RUNNER_TEMP/aimal-tools"
+      - name: Enable emulator acceleration
+        run: sudo chmod a+rw /dev/kvm
       - name: Execute patched fixtures on Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
