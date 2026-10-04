@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.2.3",
+  "version": "1.3.0",
   "patches": [
     {
       "name": "Aspect ratio control",
@@ -211,6 +211,34 @@
               "version": null,
               "versionCodes": null,
               "isExperimental": true,
+              "minSdk": null,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    },
+    {
+      "name": "Subtitle styling (Android TV)",
+      "description": "All Noir subtitle options with live preview and hot reload. Hold OK or press Menu during playback to open the editor; includes Fit/Stretch.",
+      "default": false,
+      "dependencies": [
+        "BytecodePatch"
+      ],
+      "compatiblePackages": [
+        {
+          "packageName": "com.crunchyroll.crunchyroid",
+          "name": "Crunchyroll (Android TV)",
+          "description": null,
+          "apkFileType": "APKM",
+          "appIconColor": "#F47521",
+          "signatures": null,
+          "targets": [
+            {
+              "version": "3.74.0",
+              "versionCodes": null,
+              "isExperimental": false,
               "minSdk": null,
               "description": null
             }

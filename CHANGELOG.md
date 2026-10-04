@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/neura-neura/aimal-patches/compare/v1.2.3...v1.3.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* establish TV dialog focus even after touchscreen mode ([6bc87b5](https://github.com/neura-neura/aimal-patches/commit/6bc87b5ac5d6897c3d2f13d607e5b00003e432ec))
+* retain TV dialog focus and verify its remote entry points ([901f051](https://github.com/neura-neura/aimal-patches/commit/901f05161bec57c2be8ab3a28b2c78b58c77cc8e))
+
+
+### Features
+
+* support Crunchyroll Android TV subtitle customization ([ebf744a](https://github.com/neura-neura/aimal-patches/commit/ebf744a8f947d68e5bbf5b82b44e3b483b0940ba))
+
 ## [1.2.3](https://github.com/neura-neura/aimal-patches/compare/v1.2.2...v1.2.3) (2026-10-04)
 
 

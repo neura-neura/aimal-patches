@@ -56,9 +56,9 @@ merge them for you.
 ## Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.2.3](https://github.com/neura-neura/aimal-patches/releases/tag/v1.2.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;8 patches total
+> **[v1.3.0](https://github.com/neura-neura/aimal-patches/releases/tag/v1.3.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;9 patches total
 <details open>
-<summary>📦 Crunchyroll&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
+<summary>📦 Crunchyroll&nbsp;&nbsp;•&nbsp;&nbsp;4 patches</summary>
 <br>
 
 **🎯 Supported versions:**
@@ -71,6 +71,7 @@ merge them for you.
 | [Aspect ratio control](#aspect-ratio-control) | Adds a Fit/Stretch toggle to the player. |  |
 | [Playback speed](#playback-speed) | Unhides the player's speed menu and fills it out to 0.5x-2.0x. |  |
 | [Subtitle styling](#subtitle-styling) | Adds all Noir subtitle style options, a live example and immediate updates during playback. |  |
+| [Subtitle styling (Android TV)](#subtitle-styling-android-tv) | All Noir subtitle options with live preview and hot reload. Hold OK or press Menu during playback to open the editor; includes Fit/Stretch. |  |
 
 </details>
 
