@@ -21,6 +21,13 @@ Cargar GothamPro de Noir** descarga las variantes reales de Gotham; necesita
 Internet. La primera carga puede tardar. El peso cambia al seleccionar su
 archivo correspondiente, incluidas las variantes 500 y 900.
 
+## Xiaomi Mi Box con Android 9
+
+La instalación preparada conserva ARM de 32 y 64 bits; no necesitas elegir un
+archivo por arquitectura. En Android 9, la autorización para instalar APKs se
+concede al gestor de archivos que uses. Sigue la pantalla de autorización que
+aparezca al abrir el APK.
+
 ## Instalar sin Morphe en la TV
 
 1. Copia el APK firmado que se preparó en tu PC a una memoria USB y conéctala a
