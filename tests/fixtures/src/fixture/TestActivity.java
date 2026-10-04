@@ -80,7 +80,11 @@ public final class TestActivity extends Activity {
                     player.getViewTreeObserver().dispatchOnPreDraw();
                     check(row.getVisibility() == View.VISIBLE, "Controller did not restore chips");
                     View aspect = ((android.view.ViewGroup)row).getChildAt(0);
-                    check(aspect.isFocusable() && aspect.requestFocus(), "D-pad focus unavailable");
+                    check(aspect.isFocusable(), "D-pad focus unavailable");
+                    // This fixture starts in touchscreen mode; allow programmatic focus
+                    // before dispatching key events directly rather than through InputDispatcher.
+                    aspect.setFocusableInTouchMode(true);
+                    check(aspect.requestFocus(), "Could not focus fixture chip");
                     aspect.dispatchKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_CENTER));
                     aspect.dispatchKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_CENTER));
                     check(player.resizeMode == 3, "D-pad center did not activate aspect chip");

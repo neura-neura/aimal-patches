@@ -74,7 +74,12 @@ public final class SubtitleFonts {
                 String faceKey = name + "#face" + selected;
                 result = cache.get(faceKey);
                 if (result == null) {
-                    result = Typeface.createFromFile(new File(directory, fileName(name) + "-w" + selected));
+                    File face = new File(directory, fileName(name) + "-w" + selected);
+                    // Some SFNT files label every variant as 400 internally.
+                    // Use the CSS style metadata while keeping that face's real outlines.
+                    result = android.os.Build.VERSION.SDK_INT >= 26
+                        ? new Typeface.Builder(face).setWeight(selected).setItalic(false).build()
+                        : Typeface.createFromFile(face);
                     cache.put(faceKey, result);
                 }
             } else {
