@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/neura-neura/aimal-patches/compare/v1.2.0...v1.2.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* capture Crunchyroll JNI subtitle clock at call sites ([4b4b9fe](https://github.com/neura-neura/aimal-patches/commit/4b4b9fe9fdf3a46643c90043ba9ffdeee538fb23))
+
 # [1.2.0](https://github.com/neura-neura/aimal-patches/compare/v1.1.0...v1.2.0) (2026-10-04)
 
 
