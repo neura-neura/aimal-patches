@@ -86,9 +86,9 @@ public class TestActivity extends Activity {
             final String message = result;
             runOnUiThread(() -> results.setText(message));
         }, "fixture-fonts").start();
-        Button open = new Button(this); open.setText("Personalizar subtítulos");
+        Button open = new Button(this); open.setText("Customize subtitles");
         open.setOnClickListener(v -> SubtitlePanel.show(this)); root.addView(open);
-        CaptionView live = new CaptionView(this); live.setText("Así se verán tus subtítulos.\nUna segunda línea de ejemplo.");
+        CaptionView live = new CaptionView(this); live.setText("This is how your subtitles will look.\nA second sample line.");
         SubtitleSettings.watch(live); root.addView(live, new LinearLayout.LayoutParams(-1, 250));
         if (getPackageName().equals("com.crunchyroll.crunchyroid") && !getClass().getName().endsWith("PlayerActivity")) {
             InternalPlayerView player = new InternalPlayerView(this);

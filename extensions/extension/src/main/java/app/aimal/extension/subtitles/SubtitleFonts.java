@@ -135,7 +135,7 @@ public final class SubtitleFonts {
                 face.matches("(?is).*font-weight\\s*:\\s*400.*") && !face.matches("(?is).*font-style\\s*:\\s*italic.*") ? 0 : 1));
         List<String> names = new ArrayList<>();
         File directory = new File(context.getFilesDir(), "aimal-fonts");
-        if (!directory.isDirectory() && !directory.mkdirs()) throw new Exception("No se pudo crear el caché de fuentes");
+        if (!directory.isDirectory() && !directory.mkdirs()) throw new Exception("Could not create the font cache");
         for (String face : faceBlocks) {
             if (face.matches("(?is).*font-style\\s*:\\s*(italic|oblique).*")) continue;
             if (names.size() >= 64) break;
@@ -159,7 +159,7 @@ public final class SubtitleFonts {
                     try (FileOutputStream out = new FileOutputStream(temporary)) { out.write(bytes); }
                     Typeface loaded = Typeface.createFromFile(temporary);
                     File target = new File(directory, fileName(name) + "-w" + weight);
-                    if (!temporary.renameTo(target)) throw new Exception("No se pudo guardar la fuente");
+                    if (!temporary.renameTo(target)) throw new Exception("Could not save the font");
                     try (FileOutputStream out = new FileOutputStream(new File(directory, fileName(name) + ".name"))) {
                         out.write(name.getBytes(StandardCharsets.UTF_8));
                     }
@@ -169,19 +169,19 @@ public final class SubtitleFonts {
                 break;
             }
         }
-        if (names.isEmpty()) throw new Exception("El CSS debe incluir fuentes TTF u OTF; Android no admite WOFF/WOFF2");
+        if (names.isEmpty()) throw new Exception("CSS must include TTF or OTF fonts; Android does not support WOFF/WOFF2");
         for (String name : names) new File(directory, fileName(name) + ".weights-v2").createNewFile();
         return names;
     }
 
     private static String fileName(String name) { return "font-" + Integer.toHexString(name.hashCode()); }
     private static byte[] download(URL url, int limit) throws Exception {
-        if (!url.getProtocol().equals("https")) throw new Exception("La URL de fuentes debe usar HTTPS");
+        if (!url.getProtocol().equals("https")) throw new Exception("The font URL must use HTTPS");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(10000); connection.setReadTimeout(10000);
         connection.setInstanceFollowRedirects(false);
         try {
-            if (connection.getResponseCode() != 200) throw new Exception("Error HTTP " + connection.getResponseCode());
+            if (connection.getResponseCode() != 200) throw new Exception("HTTP error " + connection.getResponseCode());
             try (InputStream in = connection.getInputStream()) { return read(in, limit); }
         } finally { connection.disconnect(); }
     }
@@ -190,7 +190,7 @@ public final class SubtitleFonts {
         byte[] buffer = new byte[8192];
         int count;
         while ((count = in.read(buffer)) != -1) {
-            if (out.size() + count > limit) throw new Exception("La fuente excede el tamaño permitido");
+            if (out.size() + count > limit) throw new Exception("The font exceeds the size limit");
             out.write(buffer, 0, count);
         }
         return out.toByteArray();

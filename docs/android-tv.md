@@ -1,90 +1,88 @@
 # Crunchyroll Android TV 3.74.0
 
-El parche **Subtitle styling (Android TV)** agrega las 15 opciones de Noir,
-una vista previa y cambios inmediatos en los subtítulos de texto de media3.
-Es específico de `com.crunchyroll.crunchyroid` **3.74.0 (22364)** para TV.
-Los subtítulos de imagen conservan el dibujo original.
+**Subtitle styling (Android TV)** adds all 15 Noir style options, a live preview,
+and immediate updates to text subtitles. It targets the TV variant of
+`com.crunchyroll.crunchyroid` **3.74.0 (22364)**. Image cues keep native drawing.
 
-La corrección posterior a 1.3.0 conecta también la selección del vídeo: cuando
-hay un vídeo limpio y una pista externa para el idioma elegido, usa esa pareja
-en lugar del vídeo con las letras incrustadas. La pista ASS se decodifica en el
-reproductor original y sus cues llegan al dibujo personalizado. Cambiar de
-idioma y desactivar los subtítulos actualiza esa selección. Si el contenido solo
-ofrece subtítulos incrustados, conserva el vídeo original.
+When the selected language has clean video and an external subtitle track,
+the patch uses that pair instead of video with burned-in captions. The original
+player decodes the ASS track and sends its cues to the custom renderer.
+Changing language or turning subtitles off updates the selection. If only
+burned-in subtitles are available, the original video is preserved.
 
-La versión 1.3.2 corrige el flujo antiguo usado por la Mi Box: antes se leía
-solo el mapa de closed captions y se omitían las pistas ASS. Por eso el editor
-cambiaba su vista previa, pero el episodio seguía usando subtítulos incrustados.
-Ahora se incluyen ambas clases de pista al seleccionar el idioma.
+The legacy TV flow stores ASS subtitles separately from closed captions. The
+patch reads both maps; reading only closed captions would leave the preview
+working while the episode still showed burned-in subtitles.
 
-Al actualizar desde el primer APK de TV, instala la nueva versión encima y
-cierra y vuelve a abrir el episodio una vez. A partir de ahí, los cambios de
-estilo se aplican al instante, también con la reproducción pausada.
+After updating an older patched APK, close and reopen the episode once.
+Subsequent style changes apply immediately, including while playback is paused.
 
-La verificación usa las clases originales del APK 3.74.0, sus modelos de
-selección de vídeo y su ExoPlayer para reproducir un clip local con una pista
-ASS separada. Comprueba el dibujo, el cambio de estilo en pausa y la caducidad
-del subtítulo. También comprueba el flujo antiguo con pistas ASS y sin closed
-captions. La corrección 1.3.2 se comprobó además en una Xiaomi Mi Box 4 con
-Android 9 y sesión iniciada: el reproductor recibió la pista ASS en español
-y el usuario confirmó que los cambios de estilo se veían en el episodio.
+## Remote controls
 
-## Usar el mando
+During an episode, hold **OK / Enter** for at least one second, then release it.
+**Menu** also opens the editor on remotes with that button. There is no permanent
+chip over the TV video. A short OK press keeps the player's original action;
+the action is delivered when you release the button.
 
-Durante un episodio, mantén **OK / Enter** al menos un segundo y suéltalo.
-También puedes pulsar **Menú** si tu mando tiene ese botón. Se abre el editor,
-sin una pastilla permanente sobre el vídeo. Una pulsación corta de OK conserva
-la acción del reproductor; la acción se entrega al soltar el botón.
+The editor initially focuses **Close**. Use arrows to move between controls,
+**left/right** to adjust sliders, and **OK** to activate buttons and switches.
+Numeric fields accept exact values with the TV keyboard. **Back** closes the
+editor; changes are already saved. **FIT / STRETCH** changes picture fit.
 
-El editor empieza con foco en **Cerrar**. Usa las flechas para recorrer los
-controles, **izquierda/derecha** para ajustar los deslizadores y **OK** para
-activar botones y opciones. Los campos permiten valores exactos con el teclado
-de la TV. **Atrás** cierra el editor; los cambios ya están guardados.
-**FIT / STRETCH** cambia el ajuste de imagen. **Elegir o importar fuente →
-Cargar GothamPro de Noir** descarga las variantes reales de Gotham; necesita
-Internet. La primera carga puede tardar. El peso cambia al seleccionar su
-archivo correspondiente, incluidas las variantes 500 y 900.
+**Choose or import font → Load GothamPro from Noir** downloads the real font
+weights, including Medium (500) and Black (900). The initial download requires
+Internet access; imported fonts are then cached for offline use.
 
-## Xiaomi Mi Box con Android 9
+**Playback diagnostics** shows track and cue counters for troubleshooting.
+It does not display playback URLs or account credentials.
 
-La instalación preparada conserva ARM de 32 y 64 bits; no necesitas elegir un
-archivo por arquitectura. En Android 9, la autorización para instalar APKs se
-concede al gestor de archivos que uses. Sigue la pantalla de autorización que
-aparezca al abrir el APK.
+## Patch on a phone, install on the TV
 
-## Instalar sin Morphe en la TV
+Morphe does not need to be installed on the TV.
 
-1. Copia el APK firmado que se preparó en tu PC a una memoria USB y conéctala a
-   la TV box. También puedes transferirlo por tu método habitual de archivos.
-2. Si está instalada la versión oficial de Crunchyroll, desinstálala primero:
-   tiene otra firma. Esto borra los datos locales y tendrás que iniciar sesión
-   de nuevo. Conserva tus credenciales antes de hacerlo.
-3. Abre el APK desde un gestor de archivos de la TV. Si Android lo solicita,
-   permite instalar aplicaciones desconocidas para ese gestor. En versiones
-   antiguas, la opción puede estar en **Seguridad → Fuentes desconocidas**.
-4. Instálalo y abre Crunchyroll desde el launcher de TV. Inicia sesión y prueba
-   un episodio con subtítulos. Mantén OK para abrir la personalización.
+1. In Morphe Manager on your phone, select a patch source containing this
+   feature and the original **Crunchyroll Android TV 3.74.0 APK/APKM**.
+2. Enable only **Subtitle styling (Android TV)**. The mobile Crunchyroll patches
+   target a different player and version.
+3. Apply the patch, export the signed APK, and transfer it to the TV using a USB
+   drive or your usual file transfer method.
+4. Open the APK in a TV file manager. If Android requests permission to install
+   unknown apps, grant it to that file manager.
+5. Open Crunchyroll from the TV launcher, sign in, and play an episode with
+   subtitles. Hold OK to open the editor.
 
-La TV box necesita Android 6.0 o posterior y ARM de 32 o 64 bits. El APK
-combinado conserva ambas arquitecturas del archivo que compartiste.
+The official app has a different signature. Remove it before installing the
+patched APK; uninstalling clears local data and requires signing in again.
+For later updates without reinstalling, use the same signing key and patching
+method. Morphe Manager and a separately generated desktop APK can use different
+keys.
 
-También puedes instalar desde el PC con ADB si la TV ya tiene depuración
-configurada y autorizada:
+The supplied TV APKM contains both 32-bit and 64-bit ARM libraries. Keep both
+splits when merging it. The app requires Android 6.0 or later. On a Xiaomi Mi Box
+4 with Android 9, installation permission is granted to the file manager.
+
+For an already authorized ADB connection:
 
 ```powershell
-adb -s SERIAL_DE_TU_TV install -r "C:\Users\neura\Downloads\Crunchyroll-TV-3.74.0-Aimal.apk"
+adb -s YOUR_TV_SERIAL install -r "Crunchyroll-TV-patched.apk"
 ```
 
-## Volver a generar el APK
+Public releases contain the `.mpp` patch bundle, not the commercial APK or any
+private signing key.
 
-En Morphe Manager del móvil, actualiza la fuente
-`https://github.com/neura-neura/aimal-patches`, selecciona el APKM original de
-TV 3.74.0 y activa **únicamente Subtitle styling (Android TV)**. Exporta el APK
-firmado y transfiérelo a la TV. Los parches del móvil (Subtitle styling,
-Aspect ratio control y Playback speed) tienen otro reproductor.
+## Validation
 
-El APK preparado en el PC se firma con una clave local, distinta de la que
-Morphe Manager use en tu móvil. Para actualizar sin reinstalar, conserva el
-mismo método y clave. La clave local se guarda en
-`C:\Users\neura\.aimal-patches\signing`; no se publica en GitHub.
-Los releases públicos contienen los parches `.mpp`, no el APK comercial.
+Instrumentation uses the original 3.74.0 classes and ExoPlayer to verify modern
+and legacy routing, ASS tracks with an empty closed-caption map, separate ASS
+playback, paused style updates, cue expiration, and native fallback.
+
+The legacy fix was also tested with authenticated playback on a Xiaomi Mi Box 4
+running Android 9. The player received the Spanish ASS track, and the user
+confirmed that style changes appeared in the episode.
+
+To repeat the original-player test on an isolated emulator using your own APK:
+
+```powershell
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling (Android TV)" Crunchyroll-TV-3.74.0.apkm -o patched-tv.apk --unsigned
+python tests/run_vendor_crunchyroll.py --tv --device emulator-5554 --sdk C:/Android/Sdk --apk patched-tv.apk --out C:/Temp/aimal-tv-test
+```

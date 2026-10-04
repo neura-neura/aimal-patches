@@ -9,7 +9,7 @@ import java.util.*;
 /** 3.74.0 TV stream routing: clean video plus an independently decoded text track. */
 public final class TvPlaybackSubtitles {
     private static volatile WeakReference<Object> cms = new WeakReference<>(null);
-    private static volatile String routingStatus = "Aún no llegó una selección de vídeo";
+    private static volatile String routingStatus = "No video selection received yet";
     private static volatile int events, attached, unmatched, cueUpdates, textLength;
     private static volatile boolean drawing;
     private static final Map<String, Track> tracks = new LinkedHashMap<>();
@@ -27,10 +27,10 @@ public final class TvPlaybackSubtitles {
         Log.i("AimalSubtitles", "TV route: " + value);
     }
     public static String diagnostics() {
-        return "TV diagnóstico 1.3.2\n" + routingStatus + "\nEventos: " + events +
-            " · pistas añadidas: " + attached + " · URI sin coincidencia: " + unmatched +
-            "\nCues recibidos: " + cueUpdates + " · caracteres: " + textLength +
-            " · dibujo personalizado: " + drawing;
+        return "TV playback diagnostics\n" + routingStatus + "\nEvents: " + events +
+            " · tracks attached: " + attached + " · unmatched URIs: " + unmatched +
+            "\nCue updates: " + cueUpdates + " · characters: " + textLength +
+            " · custom drawing: " + drawing;
     }
     public static void onCaption(String text) { cueUpdates++; textLength = text.length(); }
     public static void onDrawing(boolean custom) { drawing = custom; }
@@ -39,7 +39,7 @@ public final class TvPlaybackSubtitles {
         try {
             events++;
             Object component = cms.get();
-            if (component == null) { status("CMS no disponible"); return; }
+            if (component == null) { status("CMS unavailable"); return; }
             Object source = field(event, "m");
             String video = string(field(event, "a"));
             String caption = string(field(event, "b"));
@@ -51,16 +51,16 @@ public final class TvPlaybackSubtitles {
                 Map<?, ?> subtitles = new LinkedHashMap<>(map(call(model, "i")));
                 // Closed captions take the same precedence as CMSComponent.c0.
                 ((Map)subtitles).putAll(map(call(model, "e")));
-                status("Modelo nuevo · origen=" + source + " · vídeos=" + hard.size() + " · pistas=" + subtitles.size() + " · caption=" + !caption.isEmpty());
+                status("Modern model · source=" + source + " · videos=" + hard.size() + " · tracks=" + subtitles.size() + " · caption=" + !caption.isEmpty());
                 language = language(component, hard, subtitles, video, caption, "a");
                 Object plain = hard.get("none");
                 clean = plain == null ? string(call(manifest, "h")) : string(call(plain, "a"));
                 if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "a"));
             } else {
                 Object provider = map(field(component, "n")).get(source);
-                if (provider == null) { status("Sin modelo para origen=" + source + " · nuevos=" + map(field(component,"s")).size() + " · antiguos=" + map(field(component,"n")).size()); return; }
+                if (provider == null) { status("No model for source=" + source + " · modern=" + map(field(component,"s")).size() + " · legacy=" + map(field(component,"n")).size()); return; }
                 Object stream = call(provider, "g");
-                if (stream == null) { status("Proveedor sin stream · origen=" + source); return; }
+                if (stream == null) { status("Provider has no stream · source=" + source); return; }
                 Map<?, ?> hard = map(call(stream, "e"));
                 // In the TV build d() is CLOSED CAPTIONS, not ASS subtitles.
                 // R8 removed the unused subtitles getter; its constructor still stores f.
@@ -68,26 +68,26 @@ public final class TvPlaybackSubtitles {
                 subtitles.putAll(map(field(stream, "f")));
                 subtitles.putAll(map(call(stream, "d")));
                 language = language(component, hard, subtitles, video, caption, "getUrl");
-                status("Modelo antiguo · origen=" + source + " · vídeos=" + hard.size() + " · pistas=" + subtitles.size() + " · idioma=" + language);
+                status("Legacy model · source=" + source + " · videos=" + hard.size() + " · tracks=" + subtitles.size() + " · language=" + language);
                 Object plain = hard.get("none");
                 clean = plain == null ? string(call(stream, "j")) : string(call(plain, "getUrl"));
                 if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "getUrl"));
             }
             // Keep unavailable languages and genuinely burned-only content on the native path.
             if (language.equals("none")) {
-                status("Subtítulos desactivados");
+                status("Subtitles disabled");
                 synchronized (tracks) { tracks.remove(clean); }
                 return;
             }
-            if (clean.isEmpty() || caption.isEmpty()) { status(routingStatus + " · limpio=" + !clean.isEmpty() + " · texto=" + !caption.isEmpty() + " · idioma=" + language); return; }
+            if (clean.isEmpty() || caption.isEmpty()) { status(routingStatus + " · clean=" + !clean.isEmpty() + " · text=" + !caption.isEmpty() + " · language=" + language); return; }
             set(event, "a", clean);
             set(event, "b", caption);
-            status("Vídeo limpio + pista externa seleccionados · idioma=" + language);
+            status("Clean video + external track selected · language=" + language);
             synchronized (tracks) {
                 tracks.put(clean, new Track(caption, language));
                 while (tracks.size() > 32) tracks.remove(tracks.keySet().iterator().next());
             }
-        } catch (Throwable error) { status("Error en selección: " + error.getClass().getSimpleName()); Log.e("AimalSubtitles", "Cannot route TV text track", error); }
+        } catch (Throwable error) { status("Selection error: " + error.getClass().getSimpleName()); Log.e("AimalSubtitles", "Cannot route TV text track", error); }
     }
 
     private static String language(Object component, Map<?, ?> hard, Map<?, ?> subtitles,
@@ -126,7 +126,7 @@ public final class TvPlaybackSubtitles {
             builder.getClass().getMethod("k", List.class).invoke(builder, Collections.singletonList(configuration));
             attached++;
             Log.i("AimalSubtitles", "TV MediaItem attached text track: " + track.language + " / " + mime);
-        } catch (Throwable error) { status("Error al añadir pista: " + error.getClass().getSimpleName()); Log.e("AimalSubtitles", "Cannot attach TV text track", error); }
+        } catch (Throwable error) { status("Track attachment error: " + error.getClass().getSimpleName()); Log.e("AimalSubtitles", "Cannot attach TV text track", error); }
     }
     private static Object call(Object object, String name) throws Exception {
         return object == null ? null : object.getClass().getMethod(name).invoke(object);

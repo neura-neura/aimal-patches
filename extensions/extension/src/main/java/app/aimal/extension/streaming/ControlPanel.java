@@ -173,9 +173,9 @@ final class ControlPanel extends LinearLayout {
         });
         expandedRow.addView(aspectChip);
 
-        subtitleToggleChip = chip("SUBTÍTULOS", true);
+        subtitleToggleChip = chip("SUBTITLES", true);
         subtitleToggleChip.setMinHeight(dp(48));
-        subtitleToggleChip.setContentDescription("Abrir personalización de subtítulos");
+        subtitleToggleChip.setContentDescription("Open subtitle customization");
         subtitleToggleChip.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {

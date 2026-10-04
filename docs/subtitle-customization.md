@@ -1,158 +1,149 @@
-# Personalización de subtítulos en Aimal
+# Subtitle customization
 
-Este fork agrega un apartado **SUBTÍTULOS** al reproductor. Su vista previa y los
-subtítulos durante la reproducción usan el mismo renderizador. Los cambios se
-guardan al mover los controles; no hay un botón de aplicar ni hace falta cambiar
-de episodio o de idioma. También se puede desactivar el estilo personalizado y
-recuperar inmediatamente el dibujo original de la aplicación.
+The **SUBTITLES** editor uses the same renderer for its live sample and active
+subtitles. Changes are saved as you adjust controls and apply immediately,
+including to a paused subtitle. Turn off **Use custom styling** to restore the
+app's native subtitle drawing.
 
-La pastilla **FIT / SUBTÍTULOS** aparece junto con los controles del reproductor
-y desaparece por completo cuando estos se ocultan. Para recuperarla, muestra
-los controles normalmente: con un toque en el móvil o con el mando al usar TV.
-Los dos botones admiten foco y activación con D-pad y muestran el foco claramente.
-La navegación con D-pad se comprueba en emulador; esto no constituye un port
-del APK de Crunchyroll para Android TV.
+On mobile, the **FIT / SUBTITLES** chips appear with the player's controls and
+disappear completely when those controls hide. Tap the player to show them
+again. Both buttons support D-pad focus and activation. The separate Crunchyroll
+TV patch uses remote shortcuts; see the [TV guide](android-tv.md).
 
-La referencia es el esquema `SubtitleStyle` de
-[Noir Player, revisión 54eb8d1](https://github.com/neura-neura/noir-player/blob/54eb8d176475186580259686050b8f4bec141aeb/src/App.tsx#L97).
-Las 15 propiedades están incluidas:
+## Style options
 
-| Propiedad de Noir | Control | Intervalo |
+The reference is the `SubtitleStyle` schema in
+[Noir Player at revision 54eb8d1](https://github.com/neura-neura/noir-player/blob/54eb8d176475186580259686050b8f4bec141aeb/src/App.tsx#L97).
+All 15 properties are included:
+
+| Noir property | Control | Range |
 | --- | --- | --- |
-| `fontFamily` | Familia instalada, búsqueda, paginación, ruta local o importación CSS | Fuentes disponibles en Android y fuentes importadas |
-| `fontSize` | Tamaño | 8–200 px |
-| `fontWeight` | Peso | 100–900 |
-| `textColor` | Color del texto | `#RRGGBB` |
-| `backgroundColor` | Color del fondo | `#RRGGBB` |
-| `backgroundOpacity` | Opacidad del fondo | 0–100 % |
-| `bottomOffset` | Distancia desde abajo | 0–100 % |
-| `useCustomMaxWidth` | Limitar ancho máximo | Activado/desactivado |
-| `maxWidth` | Ancho máximo | 10–100 % |
-| `paddingX` | Margen interno horizontal | 0–80 px |
-| `paddingY` | Margen interno vertical | 0–80 px |
-| `borderRadius` | Radio de las esquinas | 0–80 px |
-| `lineHeight` | Interlineado | 0,5–3 |
-| `letterSpacing` | Espaciado entre letras | −5–10 px |
-| `textShadow` | Sombra del texto | Activado/desactivado |
+| `fontFamily` | Installed fonts, search, pagination, local path, or CSS import | Android and imported fonts |
+| `fontSize` | Size | 8–200 px |
+| `fontWeight` | Weight | 100–900 |
+| `textColor` | Text color | `#RRGGBB` |
+| `backgroundColor` | Background color | `#RRGGBB` |
+| `backgroundOpacity` | Background opacity | 0–100% |
+| `bottomOffset` | Bottom offset | 0–100% |
+| `useCustomMaxWidth` | Limit maximum width | On/off |
+| `maxWidth` | Maximum width | 10–100% |
+| `paddingX` | Horizontal padding | 0–80 px |
+| `paddingY` | Vertical padding | 0–80 px |
+| `borderRadius` | Corner radius | 0–80 px |
+| `lineHeight` | Line height | 0.5–3 |
+| `letterSpacing` | Letter spacing | −5–10 px |
+| `textShadow` | Text shadow | On/off |
 
-Todos los controles numéricos permiten deslizar o escribir un valor exacto.
-**Restablecer estilo** recupera los valores iniciales. La fuente inicial es
-`sans-serif`, disponible en Android; **Cargar GothamPro de Noir** importa la
-familia de la referencia. Los píxeles son píxeles de pantalla Android: el tamaño
-se conserva al cambiar el ancho, y cambia el salto de línea. Los porcentajes se
-calculan sobre el área real de subtítulos.
+Numeric controls accept sliders or exact typed values. **Reset style** restores
+defaults. The default font is Android's `sans-serif`;
+**Load GothamPro from Noir** imports the reference font family. Pixels are
+Android screen pixels. Changing maximum width changes wrapping while preserving
+font size. Percentages use the actual subtitle drawing area.
 
-## Instalar con Morphe Manager
+## Install with Morphe Manager
 
-1. Abre [Agregar este fork como fuente](https://morphe.software/add-source?github=neura-neura/aimal-patches).
-   También puedes pegar `https://github.com/neura-neura/aimal-patches` en
-   **Fuentes de parches → Agregar fuente**.
-2. Actualiza la fuente y comprueba que muestra **1.2.0** o una versión posterior
-   de este fork. Evita seleccionar también la fuente original de Aimal para la
-   misma aplicación: ambos paquetes modifican los mismos métodos.
-3. Selecciona tu APK/APKM original. Las versiones de referencia del proyecto son
-   Crunchyroll **3.117.0**, HBO Max **7.9.0.84**, Disney+
-   **26.14.1+rc2-2026.08.20** y Viki **26.5.0**. HBO Max usa `com.wbd.stream`.
-4. Para Crunchyroll, activa **Subtitle styling**; incluye la dependencia
-   **Aspect ratio control**. Para las otras aplicaciones, activa
+1. Select a patch source containing this feature. The development fork is
+   [neura-neura/aimal-patches](https://github.com/neura-neura/aimal-patches), which
+   can be added through [Morphe's source link](https://morphe.software/add-source?github=neura-neura/aimal-patches).
+2. Update the source. Select one source per app; original and fork bundles
+   modify the same methods.
+3. Select your original APK/APKM. Reference versions are Crunchyroll mobile
+   **3.117.0**, HBO Max **7.9.0.84**, Disney+ **26.14.1+rc2-2026.08.20**, and
+   Viki **26.5.0**. HBO Max uses `com.wbd.stream`. Crunchyroll TV **3.74.0** uses
+   its [separate patch](android-tv.md).
+4. For mobile Crunchyroll, enable **Subtitle styling**, which depends on
+   **Aspect ratio control**. For other apps, enable
    **Playback speed and aspect ratio**.
-5. Aplica los parches e instala la aplicación resultante. Si Android rechaza
-   la firma porque está instalada la versión oficial, guarda tus datos antes
-   de desinstalarla e instalar la versión parcheada.
-6. Reproduce un vídeo con una pista de subtítulos de texto seleccionada. Toca
-   **SUBTÍTULOS**, cambia el tamaño o el color y comprueba tanto la vista previa
-   como los subtítulos reales. Pausa sobre una frase para comprobar el cambio
-   sin esperar al siguiente subtítulo.
+5. Apply the patches and install the resulting APK. If the official app's
+   signature prevents installation, preserve anything you need before removing
+   it; uninstalling clears local app data.
+6. Play a video with text subtitles selected. Open **SUBTITLES**, change size or
+   color, and check the preview and active subtitles. Pause on a line to test
+   changes without waiting for the next subtitle.
 
-Como alternativa, descarga el `.mpp` desde
-[Releases](https://github.com/neura-neura/aimal-patches/releases/latest) e impórtalo
-como paquete local en Morphe Manager.
+Alternatively, download a `.mpp` from your selected source's releases and import
+it as a local bundle.
 
-## Instalar con Morphe Desktop
+## Install with Morphe Desktop
 
 ```powershell
-java -jar morphe-desktop-1.18.0-all.jar patch -p https://github.com/neura-neura/aimal-patches app.apkm
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp app.apkm
 ```
 
-También se puede usar `-p patches-1.2.0.mpp` para el archivo descargado. Manager
-y Desktop admiten la combinación de los paquetes divididos de las aplicaciones.
-Consulta la documentación oficial de
-[fuentes](https://github.com/MorpheApp/morphe-manager/blob/main/docs/patch-sources.md)
-y [Desktop](https://github.com/MorpheApp/morphe-desktop/blob/main/docs/documentation.md).
+Manager and Desktop support merging split APK bundles. See the official
+[patch source guide](https://github.com/MorpheApp/morphe-manager/blob/main/docs/patch-sources.md)
+and [Desktop documentation](https://github.com/MorpheApp/morphe-desktop/blob/main/docs/documentation.md).
 
-## Fuentes y subtítulos que tienen límites
+## Fonts and rendering limits
 
-La lista de familias instaladas refleja Android, no las fuentes de Windows.
-La importación CSS descarga fuentes TTF/OTF por HTTPS, las verifica con
-`Typeface` y las conserva en el almacenamiento privado de la aplicación.
-Las hojas que solo incluyen WOFF/WOFF2 necesitan una versión TTF/OTF. Una ruta
-local debe apuntar a un archivo que la aplicación pueda leer. El error se muestra
-en el panel y el estilo anterior se conserva cuando falla la importación.
+The installed font list reflects Android fonts, rather than Windows fonts.
+CSS import downloads TTF/OTF fonts over HTTPS, validates them with `Typeface`,
+and caches them in private app storage. CSS containing only WOFF/WOFF2 needs
+TTF/OTF alternatives. Local paths must be readable by the app. Import errors
+appear in the editor and preserve the previous style.
 
-Desde 1.2.2, el importador conserva cada peso normal declarado en el CSS.
-GothamPro usa sus archivos auténticos Light (300), Regular (400), Medium (500),
-Bold (700) y Black (900), en lugar de intentar engrosar únicamente Regular.
-Las importaciones antiguas se actualizan en segundo plano al usar esa familia,
-con conexión a Internet. Si estás sin conexión, se conserva la fuente anterior;
-también puedes volver a pulsar **Cargar GothamPro de Noir** para reimportarla.
+The importer preserves each normal font weight declared in CSS. GothamPro uses
+its real Light (300), Regular (400), Medium (500), Bold (700), and Black (900)
+files. Older single-file imports upgrade in the background when that family is
+used with Internet access. Offline, the existing font remains available; use
+**Load GothamPro from Noir** to retry manually.
 
-Los subtítulos incrustados en los píxeles del vídeo no pueden personalizarse.
-Los cues de imagen de media3 conservan su dibujo nativo. Crunchyroll conserva el
-script y los handles de libass y usa su reloj de renderizado para el texto
-personalizado. Al igual que el overlay de Noir, el texto ASS se presenta como
-texto básico: no conserva karaoke, dibujos ni posicionamiento individual de
-carteles. Desactiva **Usar estilo personalizado** para recuperar el ASS nativo.
+Letters burned into video pixels cannot be restyled. The TV patch selects clean
+video with an external track when both are available. Media3 image cues keep
+their native drawing. Mobile Crunchyroll keeps original ASS scripts and libass
+handles and uses the renderer clock for custom text. Like Noir's text overlay,
+custom ASS rendering does not preserve karaoke, vector drawings, or individual
+sign positioning. Disable **Use custom styling** to restore native ASS on mobile.
 
-## Validación realizada y pendiente
+## Validation and remaining coverage
 
-El paquete compila en GitHub Actions y las aplicaciones de ensayo se parchean
-con Morphe Desktop 1.18.0. En un emulador Android 37 se comprobaron los hooks DEX,
-los cambios sobre un subtítulo pausado, el efecto visual de las 15 propiedades,
-su persistencia, los cues superpuestos, los saltos de línea, los saltos hacia
-atrás, la expiración, la liberación de pistas y la vuelta al dibujo nativo.
-El panel se inspeccionó en vertical y horizontal.
-También pasaron la importación de GothamPro desde el CSS de Noir y su caché local.
+GitHub Actions builds the bundle and patches Android fixtures with Morphe
+Desktop 1.18.0. Checks cover injected DEX hooks, all 15 visual properties,
+paused updates, persistence, overlapping cues, line breaks, backward seeks,
+expiration, track disposal, and native fallback. Font tests cover real Gotham
+weights and migration of older caches. Controller tests check complete hiding,
+restoration, and D-pad activation. TV tests cover modern/legacy routing,
+subtitles-off, short OK delivery, long OK/Menu shortcuts, and initial focus.
 
-Capturas de la aplicación de ensayo:
-[vertical](screenshots/subtitles-portrait.png) y
-[horizontal](screenshots/subtitles-landscape.png).
+The panel is checked in portrait and landscape:
+[portrait](screenshots/subtitles-portrait.png) and
+[landscape](screenshots/subtitles-landscape.png).
 
-En 1.2.1 se reprodujo el fallo de 1.2.0 con el APKM original de Crunchyroll
-3.117.0 (1175). Morphe Desktop aplicó los tres parches y generó el APK completo.
-Una prueba de instrumentación dentro de ese APK comprobó el JNI de libass,
-la carga de la pista, el reloj del controlador y el dibujo de `SubtitlesView`,
-el cambio de color con el subtítulo pausado, la expiración, la restauración del
-ASS nativo y la limpieza al destruir la pista. Se ejecutó en Android 37.
+Instrumentation in the original mobile Crunchyroll **3.117.0 (1175)** APK checks
+libass JNI, track loading, renderer timing, drawing, paused color changes,
+expiration, native ASS restoration, and track cleanup. `renderFrame(JJ)` keeps
+its original JNI name, signature, and implementation; hooks capture timestamps
+at interface and concrete call sites. Regression fixtures exercise both forms
+with a real JNI method.
 
-`renderFrame(JJ)` es nativo: el parche conserva su nombre, firma e implementación
-JNI y captura sus argumentos en las llamadas de interfaz y de clase.
-La prueba de regresión usa también un método JNI real con ambas formas de llamada.
+The user confirmed mobile playback and authenticated TV playback on a Xiaomi
+Mi Box 4 with Android 9. Original-player TV tests exercise clean-video selection
+and separate ASS playback. Commercial HBO Max, Disney+, and Viki APKs have not
+been validated; their coverage is limited to shared media3 fixtures.
 
-No se comprobó una sesión de streaming con una cuenta ni el dispositivo Xiaomi.
-Los APK comerciales de las otras tres aplicaciones siguen pendientes de validar.
+## Repeat the tests
 
-## Repetir las pruebas
-
-Usa un emulador aislado: los APK de ensayo usan los nombres de paquete de
-Crunchyroll y HBO Max. Necesitas JDK 21 o posterior, Android SDK con plataforma
-35, herramientas 35.0.1 y NDK 27.0.12077973, `adb`, el `.mpp` y Morphe Desktop 1.18.0.
+Use an isolated emulator: fixtures use Crunchyroll and HBO Max package names.
+You need JDK 21+, Android SDK platform 35, build tools 35.0.1, NDK 27.0.12077973,
+`adb`, the patch bundle, and Morphe Desktop 1.18.0.
 
 ```powershell
-python tests/run_fixtures.py --sdk C:/Users/tu_usuario/AppData/Local/Android/Sdk --bundle patches-1.2.1.mpp --morphe morphe-desktop-1.18.0-all.jar --out C:/Temp/aimal-fixtures --fonts
+python tests/run_fixtures.py --sdk C:/Android/Sdk --bundle patches.mpp --morphe morphe-desktop-1.18.0-all.jar --out C:/Temp/aimal-fixtures --fonts
 ```
 
-Los resultados quedan en `fixture-result.txt`, `font-result.txt` y
-`patch-result.json` dentro de cada carpeta de ensayo. Los APK de ensayo no se
-distribuyen como versiones de las aplicaciones comerciales.
+Results are written to `fixture-result.txt`, `font-result.txt`,
+`controls-result.txt`, `tv-result.txt`, and `patch-result.json` as applicable.
+Fixtures are test apps, not commercial app releases.
 
-Para comprobar el renderer comercial de Crunchyroll, usa tu propio APKM:
+To test the original mobile Crunchyroll renderer using your own APKM:
 
 ```powershell
-java -jar morphe-desktop-1.18.0-all.jar patch -p patches-1.2.1.mpp --exclusive -e "Subtitle styling" -e "Playback speed" -e "Aspect ratio control" Crunchyroll-3.117.0.apkm -o patched.apk --unsigned
-python tests/run_vendor_crunchyroll.py --sdk C:/Users/tu_usuario/AppData/Local/Android/Sdk --apk patched.apk --out C:/Temp/aimal-vendor
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling" -e "Playback speed" -e "Aspect ratio control" Crunchyroll-3.117.0.apkm -o patched.apk --unsigned
+python tests/run_vendor_crunchyroll.py --device emulator-5554 --sdk C:/Android/Sdk --apk patched.apk --out C:/Temp/aimal-vendor
 ```
 
-Esta prueba requiere exactamente un emulador aislado conectado. Instala el APK
-con una firma temporal bajo el paquete de Crunchyroll; elimina primero cualquier
-aplicación de ensayo con ese paquete. No inicia sesión ni reproduce contenido
-remoto. El APK comercial no se incluye en el repositorio ni en los releases.
+The vendor runner accepts only an explicitly selected isolated emulator. It
+installs the app and instrumentation with a temporary test signature. Remove
+conflicting test installs first. It does not sign in or play remote content.
+Commercial APKs and private signing keys are excluded from the repository and
+public releases.

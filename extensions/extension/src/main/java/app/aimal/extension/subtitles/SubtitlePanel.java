@@ -71,32 +71,32 @@ public final class SubtitlePanel {
         shell.setBackgroundColor(0xFF171A20);
         LinearLayout header = new LinearLayout(context);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = label("Personalizar subtítulos", 20);
+        TextView title = label("Customize subtitles", 20);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         if (tv) header.addView(button("FIT / STRETCH", aspect));
-        Button close = button("Cerrar", () -> dialog.dismiss());
+        Button close = button("Close", () -> dialog.dismiss());
         if (tv) close.setFocusableInTouchMode(true);
         header.addView(close);
         shell.addView(header);
         preview = new CaptionView(context);
-        preview.setText("Así se verán tus subtítulos.\nUna segunda línea de ejemplo.");
+        preview.setText("This is how your subtitles will look.\nA second sample line.");
         GradientDrawable scene = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{0xFF334B65, 0xFF59776D, 0xFF121820});
         scene.setCornerRadius(dp(8));
         preview.setBackground(scene);
-        preview.setContentDescription("Vista previa de los subtítulos, actualizada en tiempo real");
+        preview.setContentDescription("Subtitle preview, updated in real time");
         preview.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
         shell.addView(preview, new LinearLayout.LayoutParams(-1, Math.max(dp(90), Math.min(dp(170), screenHeight / 4))));
         SubtitleSettings.watch(preview);
-        status = label("Los cambios se guardan y se aplican al instante.", 12);
+        status = label("Changes are saved and applied immediately.", 12);
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         shell.addView(status);
         if (tv) {
-            Button diagnostic = button("Diagnóstico de reproducción", () -> {
-                new android.app.AlertDialog.Builder(context).setTitle("Diagnóstico de subtítulos")
+            Button diagnostic = button("Playback diagnostics", () -> {
+                new android.app.AlertDialog.Builder(context).setTitle("Subtitle diagnostics")
                     .setMessage(app.aimal.extension.crunchyroll.TvPlaybackSubtitles.diagnostics())
-                    .setPositiveButton("Cerrar", null).show();
+                    .setPositiveButton("Close", null).show();
             });
             shell.addView(diagnostic);
             focusOutline(diagnostic);
@@ -144,9 +144,9 @@ public final class SubtitlePanel {
         binding = true;
         style = SubtitleSettings.style(context);
         content.removeAllViews();
-        toggle("Usar estilo personalizado", style.enabled, value -> style.enabled = value);
-        section("Tipografía");
-        selectedFont = label("Fuente actual: " + style.fontFamily, 14);
+        toggle("Use custom styling", style.enabled, value -> style.enabled = value);
+        section("Typography");
+        selectedFont = label("Current font: " + style.fontFamily, 14);
         content.addView(selectedFont);
         int fontStart = content.getChildCount();
         fonts();
@@ -157,32 +157,32 @@ public final class SubtitlePanel {
             fontControls.addView(child);
         }
         fontControls.setVisibility(View.GONE);
-        content.addView(button("Elegir o importar fuente", () -> fontControls.setVisibility(
+        content.addView(button("Choose or import font", () -> fontControls.setVisibility(
                 fontControls.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE)));
         content.addView(fontControls);
-        number("Tamaño", 8, 200, 1, style.fontSize, "px", value -> style.fontSize = value);
-        number("Peso", 100, 900, 10, style.fontWeight, "", value -> style.fontWeight = Math.round(value));
-        number("Interlineado", .5f, 3, .01f, style.lineHeight, "×", value -> style.lineHeight = value);
-        number("Espaciado entre letras", -5, 10, .1f, style.letterSpacing, "px", value -> style.letterSpacing = value);
-        color("Color del texto", style.textColor, value -> style.textColor = value);
-        toggle("Sombra del texto", style.textShadow, value -> style.textShadow = value);
-        section("Posición y ancho");
-        number("Distancia desde abajo", 0, 100, 1, style.bottomOffset, "%", value -> style.bottomOffset = value);
+        number("Size", 8, 200, 1, style.fontSize, "px", value -> style.fontSize = value);
+        number("Weight", 100, 900, 10, style.fontWeight, "", value -> style.fontWeight = Math.round(value));
+        number("Line height", .5f, 3, .01f, style.lineHeight, "×", value -> style.lineHeight = value);
+        number("Letter spacing", -5, 10, .1f, style.letterSpacing, "px", value -> style.letterSpacing = value);
+        color("Text color", style.textColor, value -> style.textColor = value);
+        toggle("Text shadow", style.textShadow, value -> style.textShadow = value);
+        section("Position and width");
+        number("Bottom offset", 0, 100, 1, style.bottomOffset, "%", value -> style.bottomOffset = value);
         final LinearLayout widthControls = column();
-        toggle("Limitar ancho máximo", style.useCustomMaxWidth, value -> {
+        toggle("Limit maximum width", style.useCustomMaxWidth, value -> {
             style.useCustomMaxWidth = value;
             widthControls.setVisibility(value ? View.VISIBLE : View.GONE);
         });
         content.addView(widthControls);
-        numberInto(widthControls, "Ancho máximo", 10, 100, 1, style.maxWidth, "%", value -> style.maxWidth = value);
+        numberInto(widthControls, "Maximum width", 10, 100, 1, style.maxWidth, "%", value -> style.maxWidth = value);
         widthControls.setVisibility(style.useCustomMaxWidth ? View.VISIBLE : View.GONE);
-        section("Fondo");
-        color("Color del fondo", style.backgroundColor, value -> style.backgroundColor = value);
-        number("Opacidad del fondo", 0, 100, 1, style.backgroundOpacity * 100, "%", value -> style.backgroundOpacity = value / 100);
-        number("Margen interno horizontal", 0, 80, 1, style.paddingX, "px", value -> style.paddingX = value);
-        number("Margen interno vertical", 0, 80, 1, style.paddingY, "px", value -> style.paddingY = value);
-        number("Radio de las esquinas", 0, 80, 1, style.borderRadius, "px", value -> style.borderRadius = value);
-        content.addView(button("Restablecer estilo", () -> {
+        section("Background");
+        color("Background color", style.backgroundColor, value -> style.backgroundColor = value);
+        number("Background opacity", 0, 100, 1, style.backgroundOpacity * 100, "%", value -> style.backgroundOpacity = value / 100);
+        number("Horizontal padding", 0, 80, 1, style.paddingX, "px", value -> style.paddingX = value);
+        number("Vertical padding", 0, 80, 1, style.paddingY, "px", value -> style.paddingY = value);
+        number("Corner radius", 0, 80, 1, style.borderRadius, "px", value -> style.borderRadius = value);
+        content.addView(button("Reset style", () -> {
             SubtitleSettings.reset(context);
             fontSearch = ""; page = 0;
             build();
@@ -199,9 +199,9 @@ public final class SubtitlePanel {
     private void changed() {
         if (binding) return;
         SubtitleSettings.changed(context);
-        if (selectedFont != null) selectedFont.setText("Fuente actual: " + style.fontFamily);
+        if (selectedFont != null) selectedFont.setText("Current font: " + style.fontFamily);
         preview.invalidate();
-        status.setText("Guardado · vista previa y subtítulos actualizados");
+        status.setText("Saved · preview and subtitles updated");
     }
 
     private void number(String title, float min, float max, float step, float value, String unit, NumberChange change) {
@@ -214,7 +214,7 @@ public final class SubtitlePanel {
         LinearLayout row = new LinearLayout(context);
         EditText input = input(format(value, step));
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        input.setContentDescription(title + ", valor exacto");
+        input.setContentDescription(title + ", exact value");
         label.setLabelFor(input.getId());
         SeekBar slider = new SeekBar(context);
         slider.setMax(Math.round((max - min) / step));
@@ -239,12 +239,12 @@ public final class SubtitlePanel {
             try {
                 float next = Float.parseFloat(text.replace(',', '.'));
                 if (Float.isNaN(next) || Float.isInfinite(next) || next < min || next > max) {
-                    input.setError("Entre " + format(min, step) + " y " + format(max, step)); return;
+                    input.setError("Between " + format(min, step) + " and " + format(max, step)); return;
                 }
                 input.setError(null);
                 syncing[0] = true; slider.setProgress(Math.round((next - min) / step)); syncing[0] = false;
                 change.set(next); changed();
-            } catch (NumberFormatException ignored) { if (!text.isEmpty()) input.setError("Introduce un número"); }
+            } catch (NumberFormatException ignored) { if (!text.isEmpty()) input.setError("Enter a number"); }
         }));
     }
 
@@ -256,7 +256,7 @@ public final class SubtitlePanel {
         label.setLabelFor(input.getId());
         content.addView(input);
         input.addTextChangedListener(watcher(text -> {
-            if (!text.matches("#[0-9a-fA-F]{6}")) { input.setError("Usa #RRGGBB, por ejemplo #FFFFFF"); return; }
+            if (!text.matches("#[0-9a-fA-F]{6}")) { input.setError("Use #RRGGBB, for example #FFFFFF"); return; }
             input.setError(null); change.set(Color.parseColor(text)); changed();
         }));
         LinearLayout swatches = new LinearLayout(context);
@@ -279,8 +279,8 @@ public final class SubtitlePanel {
 
     private void fonts() {
         EditText search = input(fontSearch);
-        search.setHint("Buscar fuentes instaladas o descargadas");
-        search.setContentDescription("Buscar fuentes");
+        search.setHint("Search installed or downloaded fonts");
+        search.setContentDescription("Search fonts");
         content.addView(search);
         LinearLayout fontList = column();
         content.addView(fontList);
@@ -307,42 +307,42 @@ public final class SubtitlePanel {
                 sample.setTag(name); sample.setTypeface(SubtitleFonts.resolve(name));
                 fontList.addView(sample);
             }
-            if (filtered.isEmpty()) fontList.addView(label("No se encontraron fuentes", 13));
+            if (filtered.isEmpty()) fontList.addView(label("No fonts found", 13));
         };
         search.addTextChangedListener(watcher(value -> { fontSearch = value; page = 0; render.run(); }));
         LinearLayout navigation = new LinearLayout(context);
-        navigation.addView(button("Anterior", () -> { page = Math.max(0, page - 1); render.run(); }), new LinearLayout.LayoutParams(0, dp(48), 1));
-        navigation.addView(button("Siguiente", () -> { page++; render.run(); }), new LinearLayout.LayoutParams(0, dp(48), 1));
+        navigation.addView(button("Previous", () -> { page = Math.max(0, page - 1); render.run(); }), new LinearLayout.LayoutParams(0, dp(48), 1));
+        navigation.addView(button("Next", () -> { page++; render.run(); }), new LinearLayout.LayoutParams(0, dp(48), 1));
         content.addView(navigation); render.run();
         EditText family = input(style.fontFamily);
-        family.setContentDescription("Nombre de familia o ruta de una fuente TTF u OTF");
-        content.addView(label("Familia o ruta local TTF/OTF", 14)); content.addView(family);
-        content.addView(button("Usar esta fuente", () -> {
+        family.setContentDescription("Font family name or path to a TTF or OTF font");
+        content.addView(label("Font family or local TTF/OTF path", 14)); content.addView(family);
+        content.addView(button("Use this font", () -> {
             String next = family.getText().toString().trim();
-            if (next.isEmpty()) { family.setError("Introduce una familia o ruta"); return; }
-            if (next.startsWith("/") && !new java.io.File(next).isFile()) { family.setError("No se puede leer ese archivo"); return; }
+            if (next.isEmpty()) { family.setError("Enter a font family or path"); return; }
+            if (next.startsWith("/") && !new java.io.File(next).isFile()) { family.setError("Cannot read that file"); return; }
             style.fontFamily = next; changed();
         }));
         EditText url = input(style.fontCssUrl);
         url.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        url.setHint("https://…/fuentes.css"); url.setContentDescription("URL HTTPS de fuentes CSS");
-        content.addView(label("Importar fuentes desde CSS", 14)); content.addView(url);
-        Button load = button("Cargar CSS", () -> loadFonts(url.getText().toString().trim()));
+        url.setHint("https://…/fonts.css"); url.setContentDescription("HTTPS font CSS URL");
+        content.addView(label("Import fonts from CSS", 14)); content.addView(url);
+        Button load = button("Load CSS", () -> loadFonts(url.getText().toString().trim()));
         content.addView(load);
-        content.addView(button("Cargar GothamPro de Noir", () -> { url.setText(SubtitleFonts.DEFAULT_CSS); loadFonts(SubtitleFonts.DEFAULT_CSS); }));
-        content.addView(label("CSS con TTF/OTF. Las fuentes se guardan para usarlas sin conexión. WOFF/WOFF2 requiere conversión a TTF/OTF.", 12));
+        content.addView(button("Load GothamPro from Noir", () -> { url.setText(SubtitleFonts.DEFAULT_CSS); loadFonts(SubtitleFonts.DEFAULT_CSS); }));
+        content.addView(label("CSS with TTF/OTF fonts. Fonts are cached for offline use. WOFF/WOFF2 must be converted to TTF/OTF.", 12));
     }
 
     private boolean loading;
     private void loadFonts(String url) {
         if (loading) return;
         loading = true;
-        status.setText("Descargando fuentes…");
+        status.setText("Downloading fonts…");
         Context app = context.getApplicationContext();
         downloads.execute(() -> {
             String message;
             List<String> loaded = null;
-            try { loaded = SubtitleFonts.loadCss(app, url); message = "Fuentes listas"; }
+            try { loaded = SubtitleFonts.loadCss(app, url); message = "Fonts ready"; }
             catch (Exception error) { message = error.getMessage(); }
             final List<String> result = loaded;
             final String feedback = message;

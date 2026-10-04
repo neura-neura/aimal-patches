@@ -66,7 +66,7 @@ public final class PlayerActivity extends fixture.TestActivity {
                         if (dialog == null || !dialog.isShowing()) throw new AssertionError("Long OK did not open editor");
                         if (dialog.getWindow().getDecorView().findFocus() == null) throw new AssertionError("TV editor has no initial focus");
                         android.view.View focus = dialog.getWindow().getDecorView().findFocus();
-                        if (!(focus instanceof android.widget.Button) || !((android.widget.Button)focus).getText().toString().equals("Cerrar")) throw new AssertionError("Initial focus did not reach Cerrar");
+                        if (!(focus instanceof android.widget.Button) || !((android.widget.Button)focus).getText().toString().equals("Close")) throw new AssertionError("Initial focus did not reach Close");
                         dialog.dismiss();
                         dispatchKeyEvent(new KeyEvent(time + 2000, time + 2000, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MENU, 0));
                         dispatchKeyEvent(new KeyEvent(time + 2000, time + 2100, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MENU, 0));

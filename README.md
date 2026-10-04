@@ -1,9 +1,8 @@
 # Aimal Patches — Noir subtitle customization fork
 
-Fork de `hashtagbasit/aimal-patches` con las 15 propiedades de estilo de Noir,
-vista previa y actualización inmediata durante la reproducción.
-[Guía de instalación, controles y validación en español](docs/subtitle-customization.md).
-
+A dedicated subtitle editor with all 15 Noir style properties, live preview,
+and immediate playback updates. See the [subtitle guide](docs/subtitle-customization.md)
+and [Crunchyroll Android TV guide](docs/android-tv.md).
 
 A small bundle of [Morphe](https://morphe.software) patches for four streaming
 apps, all of it aimed at one thing: giving the player back the controls the app
@@ -137,7 +136,7 @@ stopped firing.
 
 Crunchyroll keeps its native ASS scripts and libass handles intact. The subtitle
 patch captures the original script, follows the renderer's timestamp and draws
-basic text with the shared style renderer. A dedicated SUBTÍTULOS dialog shows
+basic text with the shared style renderer. A dedicated SUBTITLES dialog shows
 a live sample and redraws active subtitles immediately, including paused frames.
 Turning custom styling off restores the native ASS drawing.
 
@@ -176,13 +175,15 @@ chain, so the player takes the full width. On a phone it is a no-op.
 
 ## Status
 
-The subtitle fork builds in GitHub Actions. Injected Crunchyroll and media3 hooks,
-all 15 visual properties, persistence, ASS timing and native fallback passed in
-Android emulator shape fixtures. The panel was inspected in portrait and landscape.
+The subtitle bundle builds in GitHub Actions. Android fixtures cover all 15
+style properties, persistence, paused updates, ASS timing, native fallback,
+font weights, controller visibility, and TV remote shortcuts. Instrumentation
+also checks the original Crunchyroll mobile 3.117.0 and TV 3.74.0 players.
 
-Commercial APK fingerprints and authenticated playback have **not** been tested
-for this fork. Treat app compatibility as experimental; the listed reference
-versions come from upstream. See the Spanish guide for limits and reproduction.
+The user confirmed authenticated TV playback and style changes on a Xiaomi Mi
+Box 4 running Android 9. Commercial HBO Max, Disney+, and Viki APKs have not
+been validated; those apps currently have shared media3 fixture coverage.
+See the [subtitle guide](docs/subtitle-customization.md) for limits and test commands.
 
 ## Building
 

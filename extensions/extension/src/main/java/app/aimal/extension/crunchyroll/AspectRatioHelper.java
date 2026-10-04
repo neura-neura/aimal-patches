@@ -132,9 +132,9 @@ public final class AspectRatioHelper {
             });
             row.addView(aspect);
 
-            final TextView cc = chip(ctx, "SUBTÍTULOS");
+            final TextView cc = chip(ctx, "SUBTITLES");
             cc.setMinHeight(dp(ctx, 48));
-            cc.setContentDescription("Abrir personalización de subtítulos");
+            cc.setContentDescription("Open subtitle customization");
             cc.setOnClickListener(v -> {
                 app.aimal.extension.subtitles.SubtitlePanel.show(ctx);
 
