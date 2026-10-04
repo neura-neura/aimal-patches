@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/neura-neura/aimal-patches/compare/v1.3.0...v1.3.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* route Android TV playback through separate subtitle tracks ([d992e58](https://github.com/neura-neura/aimal-patches/commit/d992e5836fb19b1a20fb7940b4460dbbd1b7b277))
+
 # [1.3.0](https://github.com/neura-neura/aimal-patches/compare/v1.2.3...v1.3.0) (2026-10-04)
 
 
