@@ -61,7 +61,12 @@ public final class TvPlaybackSubtitles {
                 if (provider == null) { status("Sin modelo para origen=" + source + " · nuevos=" + map(field(component,"s")).size() + " · antiguos=" + map(field(component,"n")).size()); return; }
                 Object stream = call(provider, "g");
                 if (stream == null) { status("Proveedor sin stream · origen=" + source); return; }
-                Map<?, ?> hard = map(call(stream, "e")), subtitles = map(call(stream, "d"));
+                Map<?, ?> hard = map(call(stream, "e"));
+                // In the TV build d() is CLOSED CAPTIONS, not ASS subtitles.
+                // R8 removed the unused subtitles getter; its constructor still stores f.
+                Map<Object,Object> subtitles = new LinkedHashMap<>();
+                subtitles.putAll(map(field(stream, "f")));
+                subtitles.putAll(map(call(stream, "d")));
                 language = language(component, hard, subtitles, video, caption, "getUrl");
                 status("Modelo antiguo · origen=" + source + " · vídeos=" + hard.size() + " · pistas=" + subtitles.size() + " · idioma=" + language);
                 Object plain = hard.get("none");
