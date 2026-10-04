@@ -9,6 +9,10 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodImplementation
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val STYLER = "Lapp/aimal/extension/crunchyroll/SubtitleStyler;"
 
@@ -36,36 +40,48 @@ val subtitleStylePatch = bytecodePatch(
             return-wide v0
         """)
         renderer.methods.add(loadWrapper)
-        // Fail explicitly if the expected clock is absent instead of silently
-        // presenting settings that cannot update the real captions.
+        // 3.117.0 declares renderFrame as JNI: keep its name/signature untouched.
+        // Capture the exact receiver, track pointer and milliseconds at its callers.
         val render = renderer.methods.singleOrNull {
-            it.name in setOf("render", "renderFrame") && it.implementation != null &&
-                it.parameterTypes.any { parameter -> parameter == "J" } &&
-                it.returnType.startsWith("L") && !AccessFlags.STATIC.isSet(it.accessFlags)
-        } ?: throw PatchException("Cannot identify Crunchyroll's ASS render clock. This version needs a new renderer fingerprint.")
-        val timestampIndex = render.parameterTypes.indexOfLast { it == "J" }
-        val handleIndex = render.parameterTypes.indexOfFirst { it == "J" }
-        val handleRegister = 1 + render.parameterTypes.take(handleIndex).sumOf { if (it == "J" || it == "D") 2 else 1 }
-        val timeRegister = 1 + render.parameterTypes.take(timestampIndex).sumOf { if (it == "J" || it == "D") 2 else 1 }
-        val argumentRegisters = 1 + render.parameterTypes.sumOf { if (it == "J" || it == "D") 2 else 1 }
-        val name = render.name
-        render.setName("aimalOriginalRender")
-        val wrapper = MutableMethod(ImmutableMethod(renderer.type, name, render.parameters,
-            render.returnType, render.accessFlags, render.annotations, render.hiddenApiRestrictions,
-            ImmutableMethodImplementation(argumentRegisters + 5, emptyList(), emptyList(), emptyList())))
-        val copyHandle = if (handleIndex != timestampIndex) "move-wide/from16 v1, p$handleRegister"
-            else "const-wide v1, -0x8000000000000000L"
-        wrapper.addInstructions("""
-            move-object/from16 v0, p0
-            $copyHandle
-            move-wide/from16 v3, p$timeRegister
-            invoke-static { v0, v1, v2, v3, v4 }, $STYLER->onRender(Ljava/lang/Object;JJ)V
-            invoke-virtual/range { p0 .. p${argumentRegisters - 1} }, ${renderer.type}->aimalOriginalRender(${render.parameterTypes.joinToString("")})${render.returnType}
-            move-result-object v0
-            return-object v0
-        """)
-        renderer.methods.add(wrapper)
-        renderer.methods.filter { it.name in setOf("release", "releaseTrack", "unloadTrack", "clearTrack", "close") &&
+            it.name == "renderFrame" && it.parameterTypes == listOf("J", "J") &&
+                it.returnType == "Lcom/crunchyroll/subtitles/data/AssFrames;" &&
+                !AccessFlags.STATIC.isSet(it.accessFlags)
+        } ?: throw PatchException("Cannot identify Crunchyroll's ASS render clock signature.")
+        val owners = setOf(renderer.type, "Lcom/crunchyroll/subtitles/SubtitlesRenderer;")
+        val callers = mutableListOf<String>()
+        classDefForEach { clazz ->
+            if (clazz.methods.any { method -> method.implementation?.instructions?.any { instruction ->
+                val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                ref != null && ref.definingClass in owners && ref.name == render.name &&
+                    ref.parameterTypes == render.parameterTypes && ref.returnType == render.returnType
+            } == true }) callers.add(clazz.type)
+        }
+        var hookedCalls = 0
+        callers.forEach { type ->
+            mutableClassDefBy(type).methods.forEach { method ->
+                val instructions = method.implementation?.instructions?.toList() ?: return@forEach
+                instructions.withIndex().reversed().forEach { (index, instruction) ->
+                    val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                    if (ref == null || ref.definingClass !in owners || ref.name != render.name ||
+                        ref.parameterTypes != render.parameterTypes || ref.returnType != render.returnType) return@forEach
+                    val hook = when (instruction) {
+                        is RegisterRangeInstruction -> {
+                            check(instruction.registerCount == 5)
+                            "invoke-static/range { v${instruction.startRegister} .. v${instruction.startRegister + 4} }"
+                        }
+                        is FiveRegisterInstruction -> {
+                            check(instruction.registerCount == 5)
+                            "invoke-static { v${instruction.registerC}, v${instruction.registerD}, v${instruction.registerE}, v${instruction.registerF}, v${instruction.registerG} }"
+                        }
+                        else -> throw PatchException("Unsupported ASS clock invocation: ${instruction.opcode}")
+                    }
+                    method.addInstruction(index, "$hook, $STYLER->onRender(Ljava/lang/Object;JJ)V")
+                    hookedCalls++
+                }
+            }
+        }
+        if (hookedCalls == 0) throw PatchException("Cannot find callers of Crunchyroll's ASS render clock.")
+        renderer.methods.filter { it.name in setOf("release", "releaseTrack", "unloadTrack", "clearTrack", "close", "destroy") &&
             it.implementation != null && !AccessFlags.STATIC.isSet(it.accessFlags) }.forEach {
             if (it.parameterTypes == listOf("J")) it.addInstruction(0,
                 "invoke-static/range { p0 .. p2 }, $STYLER->clearTrack(Ljava/lang/Object;J)V")

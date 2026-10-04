@@ -62,14 +62,15 @@ public final class TestActivity extends Activity {
         check(renderer.loadTrack(SCRIPT) == 42, "Native handle changed");
         check(SCRIPT.equals(renderer.originalScript), "Native script changed");
         AssCaptionView view = new AssCaptionView(this); view.layout(0, 0, 1920, 1080);
-        renderer.renderFrame(42, 1500);
+        ((com.crunchyroll.subtitles.SubtitlesRenderer) renderer).renderFrame(42, 1500);
+        check(renderer.nativeCalls == 1, "JNI renderer was renamed or bypassed");
         Bitmap first = render(view);
         check(first.getPixel(0, 0) != Color.RED && opaquePixels(first) > 0, "Crunchyroll draw hook missing");
         check(equal(first, paint("Hello, world!\nSecond line", SubtitleSettings.style(this))), "ASS render clock or text is wrong");
         long preloaded = renderer.loadTrack(SCRIPT.replace("Hello, world!", "Preloaded language"));
         renderer.renderFrame(42, 1500);
         check(equal(first, render(view)), "Preloaded language replaced the active native handle");
-        renderer.releaseTrack(preloaded);
+        renderer.destroy(preloaded);
         renderer.renderFrame(42, 1500);
         check(equal(first, render(view)), "Releasing another track cleared the current captions");
         SubtitleStyle style = SubtitleSettings.style(this); style.textColor = Color.GREEN;
@@ -81,7 +82,7 @@ public final class TestActivity extends Activity {
         style.enabled = false; SubtitleSettings.changed(this);
         check(render(view).getPixel(0, 0) == Color.RED, "Native ASS fallback missing");
         style.enabled = true; SubtitleSettings.changed(this);
-        renderer.releaseTrack(42);
+        renderer.destroy(42);
         check(render(view).getPixel(0, 0) == Color.RED, "Released ASS track persisted");
     }
 

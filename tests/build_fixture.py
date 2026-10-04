@@ -46,4 +46,11 @@ run("java", "-cp", tools / "lib/d8.jar", "com.android.tools.r8.D8", "--min-api",
     "--output", dex, jar)
 with zipfile.ZipFile(apk, "a") as archive:
     for file in dex.glob("*.dex"): archive.write(file, file.name)
+    ndk = args.sdk / "ndk/27.0.12077973/toolchains/llvm/prebuilt"
+    host = "windows-x86_64" if os.name == "nt" else "linux-x86_64"
+    compiler = ndk / host / "bin" / ("clang.exe" if os.name == "nt" else "clang")
+    native = out / "libaimalfixture.so"
+    run(compiler, "--target=x86_64-linux-android23", "-shared", "-fPIC",
+        root / "tests/fixtures/render_clock.c", "-o", native)
+    archive.write(native, "lib/x86_64/libaimalfixture.so")
 print(apk)

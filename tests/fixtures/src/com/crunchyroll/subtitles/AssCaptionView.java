@@ -4,7 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.view.View;
 public final class AssCaptionView extends View {
-    public AssFrame frame;
+    public AssFrames frame;
     public AssCaptionView(Context context) { super(context); }
     @Override protected void onDraw(Canvas canvas) { canvas.drawColor(Color.RED); }
 }
