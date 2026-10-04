@@ -27,18 +27,65 @@ public final class SubtitleFonts {
     private static Context app;
     private SubtitleFonts() { }
 
-    public static synchronized void init(Context context) { app = context.getApplicationContext(); }
+    private static final java.util.Set<String> migrations = new java.util.HashSet<>();
+    public static synchronized void init(Context context) {
+        app = context.getApplicationContext();
+        SubtitleStyle style = SubtitleSettings.style(app);
+        File directory = new File(app.getFilesDir(), "aimal-fonts");
+        String name = style.fontFamily;
+        String address = style.fontCssUrl;
+        if (address.isEmpty() && name.equals("GothamPro")) address = DEFAULT_CSS;
+        if (!address.isEmpty() && new File(directory, fileName(name)).isFile()
+                && !new File(directory, fileName(name) + ".weights-v2").isFile() && migrations.add(name)) {
+            final String source = address;
+            final Context contextApp = app;
+            new Thread(() -> {
+                try { loadCss(contextApp, source); SubtitleSettings.changed(contextApp); }
+                catch (Exception ignored) { /* Keep the old face available offline. */ }
+            }, "Aimal-font-upgrade").start();
+        }
+    }
 
-    public static synchronized Typeface resolve(String name) {
-        Typeface result = cache.get(name);
+    public static Typeface resolve(String name) { return resolve(name, 400); }
+    public static synchronized Typeface resolve(String name, int weight) {
+        String key = name + "#" + weight;
+        Typeface result = cache.get(key);
         if (result != null) return result;
         try {
-            File saved = app == null ? null : new File(new File(app.getFilesDir(), "aimal-fonts"), fileName(name));
-            if (saved != null && saved.isFile()) result = Typeface.createFromFile(saved);
-            else if (name.startsWith("/")) result = Typeface.createFromFile(name);
-            else result = Typeface.create(name, Typeface.NORMAL);
+            File directory = app == null ? null : new File(app.getFilesDir(), "aimal-fonts");
+            List<Integer> weights = new ArrayList<>();
+            String[] files = directory == null ? null : directory.list();
+            String prefix = fileName(name) + "-w";
+            if (files != null) for (String file : files) if (file.startsWith(prefix)) {
+                try { int w = Integer.parseInt(file.substring(prefix.length())); if (w >= 100 && w <= 900) weights.add(w); }
+                catch (NumberFormatException ignored) { }
+            }
+            if (!weights.isEmpty()) {
+                int selected = weights.get(0), best = Integer.MAX_VALUE;
+                for (int w : weights) {
+                    // CSS Fonts matching: 400..500 prefer faces through 500,
+                    // then lighter faces, then heavier; others search in one direction first.
+                    int rank = weight >= 400 && weight <= 500
+                        ? (w >= weight && w <= 500 ? w - weight : w < weight ? 1000 + weight - w : 2000 + w - weight)
+                        : weight < 400 ? (w <= weight ? weight - w : 1000 + w - weight)
+                        : (w >= weight ? w - weight : 1000 + weight - w);
+                    if (rank < best) { best = rank; selected = w; }
+                }
+                String faceKey = name + "#face" + selected;
+                result = cache.get(faceKey);
+                if (result == null) {
+                    result = Typeface.createFromFile(new File(directory, fileName(name) + "-w" + selected));
+                    cache.put(faceKey, result);
+                }
+            } else {
+                File saved = directory == null ? null : new File(directory, fileName(name));
+                Typeface family = saved != null && saved.isFile() ? Typeface.createFromFile(saved)
+                    : name.startsWith("/") ? Typeface.createFromFile(name) : Typeface.create(name, Typeface.NORMAL);
+                result = android.os.Build.VERSION.SDK_INT >= 28 ? Typeface.create(family, weight, false)
+                    : Typeface.create(family, weight >= 600 ? Typeface.BOLD : Typeface.NORMAL);
+            }
         } catch (Exception ignored) { result = Typeface.SANS_SERIF; }
-        cache.put(name, result);
+        cache.put(key, result);
         return result;
     }
 
@@ -68,24 +115,28 @@ public final class SubtitleFonts {
 
     /** Downloads SFNT fonts, which Android supports natively, off the UI thread. */
     public static List<String> loadCss(Context context, String address) throws Exception {
-        init(context);
+        synchronized (SubtitleFonts.class) { app = context.getApplicationContext(); }
         URL cssUrl = new URL(address);
         String css = new String(download(cssUrl, 1024 * 1024), StandardCharsets.UTF_8);
         Matcher faces = Pattern.compile("@font-face\\s*\\{([^}]+)\\}", Pattern.CASE_INSENSITIVE).matcher(css);
         List<String> faceBlocks = new ArrayList<>();
         while (faces.find()) faceBlocks.add(faces.group(1));
-        // Prefer the regular upright face when a family provides many weights.
+        // Import every upright weight; italic faces are not part of the style UI.
         faceBlocks.sort(java.util.Comparator.comparingInt(face ->
                 face.matches("(?is).*font-weight\\s*:\\s*400.*") && !face.matches("(?is).*font-style\\s*:\\s*italic.*") ? 0 : 1));
         List<String> names = new ArrayList<>();
         File directory = new File(context.getFilesDir(), "aimal-fonts");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new Exception("No se pudo crear el caché de fuentes");
         for (String face : faceBlocks) {
+            if (face.matches("(?is).*font-style\\s*:\\s*(italic|oblique).*")) continue;
             if (names.size() >= 64) break;
             Matcher family = Pattern.compile("font-family\\s*:\\s*['\"]?([^;'\"}]+)", Pattern.CASE_INSENSITIVE).matcher(face);
             if (!family.find()) continue;
             String name = family.group(1).trim();
-            if (names.contains(name)) continue;
+            Matcher weightMatch = Pattern.compile("font-weight\\s*:\\s*([0-9]+|normal|bold)", Pattern.CASE_INSENSITIVE).matcher(face);
+            String declared = weightMatch.find() ? weightMatch.group(1) : "400";
+            int weight = declared.equalsIgnoreCase("bold") ? 700 : declared.equalsIgnoreCase("normal") ? 400 : Integer.parseInt(declared);
+            if (weight < 100 || weight > 900) continue;
             Matcher urls = Pattern.compile("url\\(\\s*['\"]?([^)'\"\\s]+)", Pattern.CASE_INSENSITIVE).matcher(face);
             while (urls.find()) {
                 String path = urls.group(1);
@@ -98,18 +149,19 @@ public final class SubtitleFonts {
                 try {
                     try (FileOutputStream out = new FileOutputStream(temporary)) { out.write(bytes); }
                     Typeface loaded = Typeface.createFromFile(temporary);
-                    File target = new File(directory, fileName(name));
-                    try (FileOutputStream out = new FileOutputStream(target)) { out.write(bytes); }
+                    File target = new File(directory, fileName(name) + "-w" + weight);
+                    if (!temporary.renameTo(target)) throw new Exception("No se pudo guardar la fuente");
                     try (FileOutputStream out = new FileOutputStream(new File(directory, fileName(name) + ".name"))) {
                         out.write(name.getBytes(StandardCharsets.UTF_8));
                     }
-                    synchronized (SubtitleFonts.class) { cache.put(name, loaded); }
-                    names.add(name);
+                    synchronized (SubtitleFonts.class) { cache.clear(); }
+                    if (!names.contains(name)) names.add(name);
                 } finally { temporary.delete(); }
                 break;
             }
         }
         if (names.isEmpty()) throw new Exception("El CSS debe incluir fuentes TTF u OTF; Android no admite WOFF/WOFF2");
+        for (String name : names) new File(directory, fileName(name) + ".weights-v2").createNewFile();
         return names;
     }
 

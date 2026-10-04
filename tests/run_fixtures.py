@@ -37,9 +37,9 @@ for app, package, patch in [
     run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
     run("adb", "install", "-r", apk)
     run("adb", "shell", "am", "force-stop", package)
-    run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt")
+    run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt", "files/controls-result.txt")
     run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/fixture.TestActivity", "--ez", "fonts", str(args.fonts).lower())
-    files = ["fixture-result.txt"] + (["font-result.txt"] if args.fonts else [])
+    files = ["fixture-result.txt"] + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
     for file in files:
         deadline = time.monotonic() + 55
         while time.monotonic() < deadline:

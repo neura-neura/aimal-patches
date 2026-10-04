@@ -28,9 +28,7 @@ public final class CaptionPainter {
         if (layout == null || !text.equals(previousText) || previousWidth != width || previousRevision != revision) {
             paint.setTextSize(textSize);
             paint.setColor(s.textColor);
-            Typeface family = SubtitleFonts.resolve(s.fontFamily);
-            paint.setTypeface(Build.VERSION.SDK_INT >= 28 ? Typeface.create(family, s.fontWeight, false)
-                    : Typeface.create(family, s.fontWeight >= 600 ? Typeface.BOLD : Typeface.NORMAL));
+            paint.setTypeface(SubtitleFonts.resolve(s.fontFamily, s.fontWeight));
             paint.setLetterSpacing(s.letterSpacing / s.fontSize);
             if (s.textShadow) paint.setShadowLayer(3 * scale, 0, 2 * scale, 0xC7000000);
             else paint.clearShadowLayer();

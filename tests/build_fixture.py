@@ -39,7 +39,12 @@ manifest.write_text(f'''<manifest xmlns:android="http://schemas.android.com/apk/
 <activity android:name="fixture.TestActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
 </application></manifest>''', encoding="utf-8")
 apk = out / "fixture.apk"
-run(tools / ("aapt2.exe" if os.name == "nt" else "aapt2"), "link", "-I", android, "--manifest", manifest, "-o", apk)
+res = out / "res/values"
+res.mkdir(parents=True, exist_ok=True)
+(res / "ids.xml").write_text('<resources><item name="exo_controller" type="id"/></resources>')
+aapt = tools / ("aapt2.exe" if os.name == "nt" else "aapt2")
+run(aapt, "compile", "--dir", out / "res", "-o", out / "resources.zip")
+run(aapt, "link", "-I", android, "--manifest", manifest, "-o", apk, out / "resources.zip")
 dex = out / "dex"
 dex.mkdir(exist_ok=True)
 run("java", "-cp", tools / "lib/d8.jar", "com.android.tools.r8.D8", "--min-api", "23", "--lib", android, "--classpath", extensions,

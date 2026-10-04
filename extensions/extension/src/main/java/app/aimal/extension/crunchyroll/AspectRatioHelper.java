@@ -24,11 +24,8 @@ import java.lang.reflect.Method;
  * reached by reflection so nothing here has to link against media3-ui. That
  * keeps the app's own layout logic intact and works on DRM output.
  *
- * An earlier version tied a button's visibility to the app's showControls /
- * hideControls callbacks. Those stopped firing the button into view on 3.117.0,
- * so it never appeared. This version is deliberately self-contained: a small
- * chip added once when the player attaches, always present, dimming a couple of
- * seconds after the last tap. It depends on nothing but the framework.
+ * The chip follows the native controller visibility and disappears entirely
+ * during playback. Native touch and D-pad handling reveal both sets of controls.
  */
 public final class AspectRatioHelper {
 
@@ -42,8 +39,7 @@ public final class AspectRatioHelper {
     private static final int[] MODES = {RESIZE_FIT, RESIZE_FILL};
     private static final String[] LABELS = {"FIT", "STRETCH"};
 
-    private static final long IDLE_MS = 2500;
-    private static final float IDLE_ALPHA = 0.35f;
+
 
     /** Remembered across player re-creations within the process. */
     private static int index = 0;
@@ -97,22 +93,26 @@ public final class AspectRatioHelper {
             params.leftMargin = dp(ctx, 16);
             row.setLayoutParams(params);
 
-            final Handler handler = new Handler(Looper.getMainLooper());
-            final Runnable dim = new Runnable() {
-                @Override
-                public void run() {
-                    row.animate().alpha(IDLE_ALPHA).setDuration(300).start();
-                }
+            // Observe the real controller's view, including its ancestor visibility.
+            // No touch/key listeners are replaced, so the app keeps its native input handling.
+            final int controllerId = ctx.getResources().getIdentifier("exo_controller", "id", ctx.getPackageName());
+            final View controller = controllerId == 0 ? null : parent.findViewById(controllerId);
+            row.setVisibility(View.GONE);
+            final android.view.ViewTreeObserver.OnPreDrawListener visibility = () -> {
+                boolean shown = controller != null && controller.isShown() && controller.getAlpha() > 0f;
+                int next = shown ? View.VISIBLE : View.GONE;
+                if (row.getVisibility() != next) row.setVisibility(next);
+                return true;
             };
-            final Runnable wake = new Runnable() {
-                @Override
-                public void run() {
-                    row.animate().cancel();
-                    row.setAlpha(1f);
-                    handler.removeCallbacks(dim);
-                    handler.postDelayed(dim, IDLE_MS);
+            row.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override public void onViewAttachedToWindow(View view) {
+                    playerView.getViewTreeObserver().addOnPreDrawListener(visibility);
                 }
-            };
+                @Override public void onViewDetachedFromWindow(View view) {
+                    if (playerView.getViewTreeObserver().isAlive())
+                        playerView.getViewTreeObserver().removeOnPreDrawListener(visibility);
+                }
+            });
 
             final TextView aspect = chip(ctx, LABELS[index]);
             aspect.setOnClickListener(new View.OnClickListener() {
@@ -121,7 +121,7 @@ public final class AspectRatioHelper {
                     index = (index + 1) % MODES.length;
                     aspect.setText(LABELS[index]);
                     applyResizeMode(playerView, MODES[index]);
-                    wake.run();
+
                 }
             });
             row.addView(aspect);
@@ -131,15 +131,14 @@ public final class AspectRatioHelper {
             cc.setContentDescription("Abrir personalización de subtítulos");
             cc.setOnClickListener(v -> {
                 app.aimal.extension.subtitles.SubtitlePanel.show(ctx);
-                wake.run();
+
             });
             row.addView(cc);
             parent.addView(row);
 
-            // Re-assert the current choice (a fresh player defaults to FIT) and
-            // start the idle timer.
+            // Re-assert the current choice (a fresh player defaults to FIT).
             applyResizeMode(playerView, MODES[index]);
-            handler.postDelayed(dim, IDLE_MS);
+
         } catch (Throwable ignored) {
         }
     }
@@ -147,6 +146,8 @@ public final class AspectRatioHelper {
     private static TextView chip(Context ctx, String text) {
         TextView view = new TextView(ctx);
         view.setText(text);
+        view.setFocusable(true);
+        view.setMinHeight(dp(ctx, 48));
         view.setTextColor(Color.WHITE);
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
         view.setGravity(Gravity.CENTER);
@@ -155,7 +156,13 @@ public final class AspectRatioHelper {
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(0xB3000000);
         bg.setCornerRadius(dp(ctx, 18));
-        view.setBackground(bg);
+        android.graphics.drawable.StateListDrawable states = new android.graphics.drawable.StateListDrawable();
+        GradientDrawable focused = new GradientDrawable();
+        focused.setColor(0xE6335555); focused.setCornerRadius(dp(ctx, 18));
+        focused.setStroke(dp(ctx, 2), 0xFF5ED6D1);
+        states.addState(new int[]{android.R.attr.state_focused}, focused);
+        states.addState(new int[]{}, bg);
+        view.setBackground(states);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,

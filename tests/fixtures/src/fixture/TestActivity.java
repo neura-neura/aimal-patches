@@ -42,7 +42,16 @@ public final class TestActivity extends Activity {
             try {
                 List<String> names = SubtitleFonts.loadCss(this, SubtitleFonts.DEFAULT_CSS);
                 check(names.contains("GothamPro"), "GothamPro was not loaded");
-                result = "PASS: remote CSS font downloaded and cached";
+                SubtitleStyle sample = new SubtitleStyle(); sample.fontFamily = "GothamPro";
+                sample.fontSize = 68; sample.textShadow = false; sample.backgroundOpacity = 0;
+                sample.fontWeight = 400; Bitmap regular = paint("Gotham real weights", sample);
+                sample.fontWeight = 500; Bitmap medium = paint("Gotham real weights", sample);
+                sample.fontWeight = 900; Bitmap black = paint("Gotham real weights", sample);
+                check(opaquePixels(black) > opaquePixels(regular) * 1.3, "900 is not visibly thicker than 400");
+                check(!equal(medium, regular) && !equal(black, medium), "Imported Gotham weights collapse to regular");
+                check(SubtitleFonts.resolve("GothamPro", 900).getWeight() == 900, "Black face weight metadata missing");
+                check(SubtitleFonts.resolve("GothamPro", 500).getWeight() == 500, "Medium face weight metadata missing");
+                result = "PASS: all Gotham weights imported, true Medium/Black faces, 900 visibly thicker";
             } catch (Throwable error) { result = "FAIL: " + error; }
             try (java.io.OutputStream out = openFileOutput("font-result.txt", MODE_PRIVATE)) {
                 out.write(result.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -54,6 +63,34 @@ public final class TestActivity extends Activity {
         open.setOnClickListener(v -> SubtitlePanel.show(this)); root.addView(open);
         CaptionView live = new CaptionView(this); live.setText("Así se verán tus subtítulos.\nUna segunda línea de ejemplo.");
         SubtitleSettings.watch(live); root.addView(live, new LinearLayout.LayoutParams(-1, 250));
+        if (getPackageName().equals("com.crunchyroll.crunchyroid")) {
+            InternalPlayerView player = new InternalPlayerView(this);
+            root.addView(player, new LinearLayout.LayoutParams(-1, 150));
+            player.postDelayed(() -> {
+                String result;
+                try {
+                    View row = player.findViewById(0x7f0a9990);
+                    check(row != null, "Control row hook missing");
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.VISIBLE, "Visible controller did not reveal row");
+                    player.controller.setVisibility(View.GONE);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.GONE, "Hidden controller left translucent chips");
+                    player.controller.setVisibility(View.VISIBLE);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.VISIBLE, "Controller did not restore chips");
+                    View aspect = ((android.view.ViewGroup)row).getChildAt(0);
+                    check(aspect.isFocusable() && aspect.requestFocus(), "D-pad focus unavailable");
+                    aspect.dispatchKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, android.view.KeyEvent.KEYCODE_DPAD_CENTER));
+                    aspect.dispatchKeyEvent(new android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, android.view.KeyEvent.KEYCODE_DPAD_CENTER));
+                    check(player.resizeMode == 3, "D-pad center did not activate aspect chip");
+                    result = "PASS: controls fully hide, restore and activate with D-pad";
+                } catch (Throwable error) { result = "FAIL: " + error; }
+                try (java.io.OutputStream out = openFileOutput("controls-result.txt", MODE_PRIVATE)) {
+                    out.write(result.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                } catch (Exception ignored) { }
+            }, 300);
+        }
         if (getIntent().getBooleanExtra("panel", false)) root.post(() -> SubtitlePanel.show(this));
     }
 
