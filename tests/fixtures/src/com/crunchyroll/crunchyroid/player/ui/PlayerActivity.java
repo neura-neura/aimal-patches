@@ -19,7 +19,25 @@ public final class PlayerActivity extends fixture.TestActivity {
                 dispatchKeyEvent(new KeyEvent(time + 200, time + 1000, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER, 0));
                 if (nativeKeys != 2) throw new AssertionError("Long OK leaked to native player");
                 getWindow().getDecorView().postDelayed(() -> {
-                    String result = getWindow().getDecorView().hasWindowFocus() ? "FAIL: long OK did not open editor" : "PASS: TV injected cue/draw hooks, normal OK replay and long OK editor";
+                    String result;
+                    try {
+                        java.lang.reflect.Field states = app.aimal.extension.crunchyroll.TvSubtitleHelper.class.getDeclaredField("presses");
+                        states.setAccessible(true);
+                        Object press = ((java.util.Map<?, ?>)states.get(null)).get(this);
+                        java.lang.reflect.Field dialogField = press.getClass().getDeclaredField("dialog");
+                        dialogField.setAccessible(true);
+                        android.app.Dialog dialog = (android.app.Dialog)((java.lang.ref.WeakReference<?>)dialogField.get(press)).get();
+                        if (dialog == null || !dialog.isShowing()) throw new AssertionError("Long OK did not open editor");
+                        if (dialog.getWindow().getDecorView().findFocus() == null) throw new AssertionError("TV editor has no initial focus");
+                        android.view.View focus = dialog.getWindow().getDecorView().findFocus();
+                        if (!(focus instanceof android.widget.Button) || !((android.widget.Button)focus).getText().toString().equals("Cerrar")) throw new AssertionError("Initial focus did not reach Cerrar");
+                        dialog.dismiss();
+                        dispatchKeyEvent(new KeyEvent(time + 2000, time + 2000, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MENU, 0));
+                        dispatchKeyEvent(new KeyEvent(time + 2000, time + 2100, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MENU, 0));
+                        dialog = (android.app.Dialog)((java.lang.ref.WeakReference<?>)dialogField.get(press)).get();
+                        if (dialog == null || !dialog.isShowing()) throw new AssertionError("Menu did not reopen editor");
+                        result = "PASS: TV cue/draw hooks, short OK replay, long OK/Menu editor and initial D-pad focus";
+                    } catch (Throwable error) { result = "FAIL: " + error; }
                     try (java.io.OutputStream out = openFileOutput("tv-result.txt", MODE_PRIVATE)) { out.write(result.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
                     catch (Exception error) { throw new RuntimeException(error); }
                 }, 500);

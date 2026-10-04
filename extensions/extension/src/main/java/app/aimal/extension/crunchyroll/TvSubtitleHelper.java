@@ -10,7 +10,10 @@ import app.aimal.extension.subtitles.SubtitlePanel;
 /** TV entry point independent of the app's Compose controller visibility. */
 public final class TvSubtitleHelper {
     private static final WeakHashMap<Activity, Press> presses = new WeakHashMap<>();
-    private static final class Press { KeyEvent down; boolean replaying; }
+    private static final class Press {
+        KeyEvent down; boolean replaying;
+        java.lang.ref.WeakReference<android.app.Dialog> dialog = new java.lang.ref.WeakReference<>(null);
+    }
     private TvSubtitleHelper() { }
 
     public static boolean onKey(Activity activity, KeyEvent event) {
@@ -47,7 +50,11 @@ public final class TvSubtitleHelper {
 
     private static void open(Activity activity) {
         if (activity.isFinishing()) return;
-        SubtitlePanel.showTv(activity, () -> toggleAspect(activity.getWindow().getDecorView()));
+        Press press = presses.get(activity);
+        android.app.Dialog existing = press.dialog.get();
+        if (existing != null && existing.isShowing()) return;
+        press.dialog = new java.lang.ref.WeakReference<>(SubtitlePanel.showTv(activity,
+                () -> toggleAspect(activity.getWindow().getDecorView())));
     }
 
     private static void toggleAspect(View view) {

@@ -47,9 +47,15 @@ public final class SubtitlePanel {
         catch (Throwable error) { android.util.Log.e("AimalSubtitles", "Cannot open settings", error); }
     }
 
-    public static void showTv(Context context, Runnable aspect) {
-        try { new SubtitlePanel(context, aspect).dialog.show(); }
-        catch (Throwable error) { android.util.Log.e("AimalSubtitles", "Cannot open TV settings", error); }
+    public static Dialog showTv(Context context, Runnable aspect) {
+        try {
+            Dialog dialog = new SubtitlePanel(context, aspect).dialog;
+            dialog.show();
+            return dialog;
+        } catch (Throwable error) {
+            android.util.Log.e("AimalSubtitles", "Cannot open TV settings", error);
+            return null;
+        }
     }
 
     private SubtitlePanel(Context context, Runnable aspect) {

@@ -28,8 +28,16 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         view.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY));
         view.layout(0, 0, 1920, 1080);
         Object builder = loader.loadClass("androidx.media3.common.text.Cue$Builder").getConstructor().newInstance();
-        builder.getClass().getMethod("setText", CharSequence.class).invoke(builder, "TV subtitle sample");
-        Object cue = builder.getClass().getMethod("build").invoke(builder);
+        Object cue = null;
+        for (Method method : builder.getClass().getMethods()) {
+            if (java.util.Arrays.equals(method.getParameterTypes(), new Class<?>[]{CharSequence.class}))
+                method.invoke(builder, "TV subtitle sample");
+        }
+        for (Method method : builder.getClass().getMethods()) {
+            if (method.getParameterCount() == 0 && method.getReturnType().getName().equals("androidx.media3.common.text.Cue"))
+                cue = method.invoke(builder);
+        }
+        check(cue != null, "Original Cue builder missing");
         Class<?> settings = loader.loadClass("app.aimal.extension.subtitles.SubtitleSettings");
         Object style = settings.getMethod("style", Context.class).invoke(null, context);
         Field enabled = style.getClass().getField("enabled"), color = style.getClass().getField("textColor");
