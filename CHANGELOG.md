@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/neura-neura/aimal-patches/compare/v1.2.2...v1.2.3) (2026-10-04)
+
+
+### Bug Fixes
+
+* follow Crunchyroll proprietary playback controls ([3407e0e](https://github.com/neura-neura/aimal-patches/commit/3407e0eafaf8508d1015c8503994044ca19254d3))
+
 ## [1.2.2](https://github.com/neura-neura/aimal-patches/compare/v1.2.1...v1.2.2) (2026-10-04)
 
 
