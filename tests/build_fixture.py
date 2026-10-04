@@ -10,7 +10,7 @@ import zipfile
 
 p = argparse.ArgumentParser()
 p.add_argument("--sdk", type=Path, required=True)
-p.add_argument("--app", choices=["crunchyroll", "media3"], required=True)
+p.add_argument("--app", choices=["crunchyroll", "media3", "crunchyroll-tv"], required=True)
 p.add_argument("--out", type=Path, required=True)
 args = p.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -30,13 +30,14 @@ run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", str(android) + os.p
 jar = out / "fixture.jar"
 with zipfile.ZipFile(jar, "w") as archive:
     for file in classes.rglob("*.class"): archive.write(file, file.relative_to(classes).as_posix())
-package = "com.crunchyroll.crunchyroid" if args.app == "crunchyroll" else "com.wbd.stream"
-version = "3.117.0" if args.app == "crunchyroll" else "7.9.0.84"
+package = "com.crunchyroll.crunchyroid" if args.app.startswith("crunchyroll") else "com.wbd.stream"
+version = "3.74.0" if args.app == "crunchyroll-tv" else ("3.117.0" if args.app == "crunchyroll" else "7.9.0.84")
+activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if args.app == "crunchyroll-tv" else "fixture.TestActivity"
 manifest = out / "AndroidManifest.xml"
 manifest.write_text(f'''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="{package}" android:versionCode="1" android:versionName="{version}">
 <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/><uses-permission android:name="android.permission.INTERNET"/>
 <application android:debuggable="true" android:name="com.wbd.stream.MainApplication" android:label="Aimal subtitle fixture" android:theme="@android:style/Theme.Material.NoActionBar">
-<activity android:name="fixture.TestActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+<activity android:name="{activity}" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
 </application></manifest>''', encoding="utf-8")
 apk = out / "fixture.apk"
 res = out / "res/values"

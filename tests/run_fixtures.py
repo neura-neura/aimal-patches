@@ -28,6 +28,7 @@ if not key.exists():
 for app, package, patch in [
     ("crunchyroll", "com.crunchyroll.crunchyroid", "Subtitle styling"),
     ("media3", "com.wbd.stream", "Playback speed and aspect ratio"),
+    ("crunchyroll-tv", "com.crunchyroll.crunchyroid", "Subtitle styling (Android TV)"),
 ]:
     out = args.out / app
     run(sys.executable, Path(__file__).with_name("build_fixture.py"), "--sdk", args.sdk, "--app", app, "--out", out)
@@ -38,8 +39,9 @@ for app, package, patch in [
     run("adb", "install", "-r", apk)
     run("adb", "shell", "am", "force-stop", package)
     run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt", "files/controls-result.txt")
-    run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/fixture.TestActivity", "--ez", "fonts", str(args.fonts).lower())
-    files = ["fixture-result.txt"] + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
+    activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if app == "crunchyroll-tv" else "fixture.TestActivity"
+    run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/" + activity, "--ez", "fonts", str(args.fonts).lower())
+    files = ["fixture-result.txt"] + (["tv-result.txt"] if app == "crunchyroll-tv" else []) + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
     for file in files:
         deadline = time.monotonic() + 55
         while time.monotonic() < deadline:

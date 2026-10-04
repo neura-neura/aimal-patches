@@ -40,14 +40,21 @@ public final class SubtitlePanel {
     private String fontSearch = "";
     private int page;
     private boolean binding;
+    private final boolean tv;
 
     public static void show(Context context) {
-        try { new SubtitlePanel(context).dialog.show(); }
+        try { new SubtitlePanel(context, null).dialog.show(); }
         catch (Throwable error) { android.util.Log.e("AimalSubtitles", "Cannot open settings", error); }
     }
 
-    private SubtitlePanel(Context context) {
+    public static void showTv(Context context, Runnable aspect) {
+        try { new SubtitlePanel(context, aspect).dialog.show(); }
+        catch (Throwable error) { android.util.Log.e("AimalSubtitles", "Cannot open TV settings", error); }
+    }
+
+    private SubtitlePanel(Context context, Runnable aspect) {
         this.context = context;
+        tv = aspect != null;
         SubtitleFonts.init(context);
         style = SubtitleSettings.style(context);
         fontNames = SubtitleFonts.installed();
@@ -60,7 +67,9 @@ public final class SubtitlePanel {
         header.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = label("Personalizar subtítulos", 20);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        header.addView(button("Cerrar", () -> dialog.dismiss()));
+        if (tv) header.addView(button("FIT / STRETCH", aspect));
+        Button close = button("Cerrar", () -> dialog.dismiss());
+        header.addView(close);
         shell.addView(header);
         preview = new CaptionView(context);
         preview.setText("Así se verán tus subtítulos.\nUna segunda línea de ejemplo.");
@@ -85,14 +94,34 @@ public final class SubtitlePanel {
         Window window = dialog.getWindow();
         if (window != null) {
             window.setBackgroundDrawableResource(android.R.color.transparent);
-            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE |
+                    (tv ? WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN : 0));
             window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
             window.setDimAmount(.35f);
-            dialog.setOnShowListener(ignored -> window.setLayout(
-                    Math.min(context.getResources().getDisplayMetrics().widthPixels - dp(24), dp(900)),
-                    WindowManager.LayoutParams.MATCH_PARENT));
+            dialog.setOnShowListener(ignored -> {
+                window.setLayout(Math.min(context.getResources().getDisplayMetrics().widthPixels - dp(24), dp(900)),
+                    WindowManager.LayoutParams.MATCH_PARENT);
+                if (tv) close.requestFocus();
+            });
         }
         build();
+        if (tv) focusOutline(header);
+    }
+
+    private void focusOutline(View view) {
+        if (view.isFocusable()) {
+            android.graphics.drawable.StateListDrawable background = new android.graphics.drawable.StateListDrawable();
+            GradientDrawable focused = new GradientDrawable();
+            focused.setColor(0xFF334D50); focused.setCornerRadius(dp(6));
+            focused.setStroke(dp(2), 0xFF5ED6D1);
+            background.addState(new int[]{android.R.attr.state_focused}, focused);
+            if (view.getBackground() != null) background.addState(new int[]{}, view.getBackground());
+            view.setBackground(background);
+        }
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup)view;
+            for (int i = 0; i < group.getChildCount(); i++) focusOutline(group.getChildAt(i));
+        }
     }
 
     private void build() {
@@ -143,6 +172,7 @@ public final class SubtitlePanel {
             build();
         }));
         binding = false;
+        if (tv) focusOutline(content);
         preview.invalidate();
     }
 

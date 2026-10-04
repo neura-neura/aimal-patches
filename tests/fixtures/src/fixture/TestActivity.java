@@ -15,7 +15,7 @@ import com.crunchyroll.subtitles.*;
 import java.util.*;
 
 /** Runs against the patched fixture APK, exercising injected DEX on Android. */
-public final class TestActivity extends Activity {
+public class TestActivity extends Activity {
     private static final String SCRIPT = "[Script Info]\nScriptType: v4.00+\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
             + "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Hello, world!\\NSecond line\n"
             + "Dialogue: 0,0:00:02.00,0:00:04.00,Default,,0,0,0,,Overlap\n";
@@ -27,7 +27,7 @@ public final class TestActivity extends Activity {
         TextView results = new TextView(this); results.setTextColor(Color.WHITE); root.addView(results);
         try {
             SubtitleSettings.reset(this);
-            if (getPackageName().equals("com.crunchyroll.crunchyroid")) testCrunchyroll(); else testMedia3();
+            if (getPackageName().equals("com.crunchyroll.crunchyroid") && !getClass().getName().endsWith("PlayerActivity")) testCrunchyroll(); else testMedia3();
             testSchema();
             results.setText("PASS: injected hooks, timing, all 15 style controls, persistence, native fallback");
             Log.i("AimalFixture", results.getText().toString());
@@ -90,7 +90,7 @@ public final class TestActivity extends Activity {
         open.setOnClickListener(v -> SubtitlePanel.show(this)); root.addView(open);
         CaptionView live = new CaptionView(this); live.setText("Así se verán tus subtítulos.\nUna segunda línea de ejemplo.");
         SubtitleSettings.watch(live); root.addView(live, new LinearLayout.LayoutParams(-1, 250));
-        if (getPackageName().equals("com.crunchyroll.crunchyroid")) {
+        if (getPackageName().equals("com.crunchyroll.crunchyroid") && !getClass().getName().endsWith("PlayerActivity")) {
             InternalPlayerView player = new InternalPlayerView(this);
             root.addView(player, new LinearLayout.LayoutParams(-1, 150));
             player.postDelayed(() -> {
