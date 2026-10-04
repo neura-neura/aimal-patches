@@ -106,6 +106,18 @@ public final class TestActivity extends Activity {
                     player.controller.setVisibility(View.VISIBLE);
                     player.getViewTreeObserver().dispatchOnPreDraw();
                     check(row.getVisibility() == View.VISIBLE, "Controller did not restore chips");
+                    View toolbar = ((com.crunchyroll.player.presentation.controls.PlayerControlsLayout)player.controller).getPlayerToolbar();
+                    toolbar.setAlpha(0f);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.GONE, "Faded toolbar left ghost chips");
+                    toolbar.setAlpha(1f);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.VISIBLE, "Toolbar fade-in did not restore chips");
+                    player.controller.setAlpha(0f);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
+                    check(row.getVisibility() == View.GONE, "Transparent ancestor left chips");
+                    player.controller.setAlpha(1f);
+                    player.getViewTreeObserver().dispatchOnPreDraw();
                     View aspect = ((android.view.ViewGroup)row).getChildAt(0);
                     check(aspect.isFocusable(), "D-pad focus unavailable");
                     // This fixture starts in touchscreen mode; allow programmatic focus
