@@ -34,6 +34,7 @@ public final class SubtitlePanel {
     private final LinearLayout content;
     private final CaptionView preview;
     private final TextView status;
+    private TextView selectedFont;
     private SubtitleStyle style;
     private List<String> fontNames;
     private String fontSearch = "";
@@ -89,7 +90,7 @@ public final class SubtitlePanel {
             window.setDimAmount(.35f);
             dialog.setOnShowListener(ignored -> window.setLayout(
                     Math.min(context.getResources().getDisplayMetrics().widthPixels - dp(24), dp(900)),
-                    screenHeight - dp(40)));
+                    WindowManager.LayoutParams.MATCH_PARENT));
         }
         build();
     }
@@ -100,7 +101,20 @@ public final class SubtitlePanel {
         content.removeAllViews();
         toggle("Usar estilo personalizado", style.enabled, value -> style.enabled = value);
         section("Tipografía");
+        selectedFont = label("Fuente actual: " + style.fontFamily, 14);
+        content.addView(selectedFont);
+        int fontStart = content.getChildCount();
         fonts();
+        LinearLayout fontControls = column();
+        while (content.getChildCount() > fontStart) {
+            View child = content.getChildAt(fontStart);
+            content.removeViewAt(fontStart);
+            fontControls.addView(child);
+        }
+        fontControls.setVisibility(View.GONE);
+        content.addView(button("Elegir o importar fuente", () -> fontControls.setVisibility(
+                fontControls.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE)));
+        content.addView(fontControls);
         number("Tamaño", 8, 200, 1, style.fontSize, "px", value -> style.fontSize = value);
         number("Peso", 100, 900, 10, style.fontWeight, "", value -> style.fontWeight = Math.round(value));
         number("Interlineado", .5f, 3, .01f, style.lineHeight, "×", value -> style.lineHeight = value);
@@ -139,6 +153,7 @@ public final class SubtitlePanel {
     private void changed() {
         if (binding) return;
         SubtitleSettings.changed(context);
+        if (selectedFont != null) selectedFont.setText("Fuente actual: " + style.fontFamily);
         preview.invalidate();
         status.setText("Guardado · vista previa y subtítulos actualizados");
     }
@@ -217,7 +232,6 @@ public final class SubtitlePanel {
     }
 
     private void fonts() {
-        content.addView(label("Fuente actual: " + style.fontFamily, 14));
         EditText search = input(fontSearch);
         search.setHint("Buscar fuentes instaladas o descargadas");
         search.setContentDescription("Buscar fuentes");

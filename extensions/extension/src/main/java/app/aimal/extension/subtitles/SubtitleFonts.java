@@ -72,11 +72,16 @@ public final class SubtitleFonts {
         URL cssUrl = new URL(address);
         String css = new String(download(cssUrl, 1024 * 1024), StandardCharsets.UTF_8);
         Matcher faces = Pattern.compile("@font-face\\s*\\{([^}]+)}", Pattern.CASE_INSENSITIVE).matcher(css);
+        List<String> faceBlocks = new ArrayList<>();
+        while (faces.find()) faceBlocks.add(faces.group(1));
+        // Prefer the regular upright face when a family provides many weights.
+        faceBlocks.sort(java.util.Comparator.comparingInt(face ->
+                face.matches("(?is).*font-weight\\s*:\\s*400.*") && !face.matches("(?is).*font-style\\s*:\\s*italic.*") ? 0 : 1));
         List<String> names = new ArrayList<>();
         File directory = new File(context.getFilesDir(), "aimal-fonts");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new Exception("No se pudo crear el caché de fuentes");
-        while (faces.find() && names.size() < 64) {
-            String face = faces.group(1);
+        for (String face : faceBlocks) {
+            if (names.size() >= 64) break;
             Matcher family = Pattern.compile("font-family\\s*:\\s*['\"]?([^;'\"}]+)", Pattern.CASE_INSENSITIVE).matcher(face);
             if (!family.find()) continue;
             String name = family.group(1).trim();
@@ -86,7 +91,9 @@ public final class SubtitleFonts {
                 String path = urls.group(1);
                 // WOFF/WOFF2/EOT cannot be passed to Android Typeface.
                 if (!path.matches("(?i).*\\.(ttf|otf)([?#].*)?")) continue;
-                byte[] bytes = download(new URL(cssUrl, path), 16 * 1024 * 1024);
+                byte[] bytes;
+                try { bytes = download(new URL(cssUrl, path), 16 * 1024 * 1024); }
+                catch (Exception unavailable) { continue; }
                 File temporary = File.createTempFile("font-", ".tmp", directory);
                 try {
                     try (FileOutputStream out = new FileOutputStream(temporary)) { out.write(bytes); }

@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 
-/** The complete Noir style schema. Pixel measurements use a 1920px video width. */
+/** The complete Noir style schema. Pixel measurements are Android display pixels. */
 public final class SubtitleStyle {
     public float fontSize = 38, backgroundOpacity = .23f, bottomOffset = 4;
     public int textColor = Color.WHITE, backgroundColor = Color.BLACK, fontWeight = 500;

@@ -20,7 +20,8 @@ public final class CaptionPainter {
 
     public void draw(Canvas canvas, int width, int height, String text, SubtitleStyle s, long revision) {
         if (width <= 0 || height <= 0 || text == null || text.isEmpty()) return;
-        float scale = width / 1920f;
+        // Noir uses fixed pixel typography: resizing changes wrapping, not font size.
+        float scale = 1f;
         float textSize = s.fontSize * scale;
         float px = s.paddingX * scale, py = s.paddingY * scale;
         int available = Math.max(1, (int) (width * (s.useCustomMaxWidth ? s.maxWidth : 100) / 100f - px * 2));

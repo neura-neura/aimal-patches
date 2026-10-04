@@ -58,8 +58,7 @@ val subtitleStylePatch = bytecodePatch(
             it.addInstruction(0, "invoke-static/range { p0 .. p0 }, $STYLER->clear(Ljava/lang/Object;)V")
         }
         val captionView = mutableClassDefByOrNull { clazz ->
-            clazz.type.contains("subtitles", ignoreCase = true) &&
-                clazz.fields.any { it.type.contains("AssFrame") } &&
+            clazz.fields.any { it.type.contains("AssFrame") } &&
                 clazz.methods.any { it.name == "onDraw" && it.parameterTypes == listOf("Landroid/graphics/Canvas;") }
         } ?: throw PatchException("Cannot find Crunchyroll's ASS caption View. This version needs a new draw fingerprint.")
         captionView.hookCaptionDraw("onDraw", STYLER)

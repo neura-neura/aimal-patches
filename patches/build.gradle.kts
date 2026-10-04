@@ -4,10 +4,10 @@ patches {
     about {
         name = "Aimal Patches"
         description = "Playback and ad-removal patches for Crunchyroll, HBO Max, Disney+ and Viki"
-        source = "https://github.com/hashtagbasit/aimal-patches"
-        author = "hashtagbasit"
-        contact = "https://github.com/hashtagbasit/aimal-patches/issues"
-        website = "https://github.com/hashtagbasit/aimal-patches"
+        source = "https://github.com/neura-neura/aimal-patches"
+        author = "hashtagbasit; subtitle customization fork by neura-neura"
+        contact = "https://github.com/neura-neura/aimal-patches/issues"
+        website = "https://github.com/neura-neura/aimal-patches"
         license = "GPLv3"
     }
 }
@@ -43,3 +43,4 @@ tasks {
         dependsOn("generatePatchesList")
     }
 }
+
