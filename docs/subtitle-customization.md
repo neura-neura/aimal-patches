@@ -6,6 +6,13 @@ guardan al mover los controles; no hay un botón de aplicar ni hace falta cambia
 de episodio o de idioma. También se puede desactivar el estilo personalizado y
 recuperar inmediatamente el dibujo original de la aplicación.
 
+La pastilla **FIT / SUBTÍTULOS** aparece junto con los controles del reproductor
+y desaparece por completo cuando estos se ocultan. Para recuperarla, muestra
+los controles normalmente: con un toque en el móvil o con el mando al usar TV.
+Los dos botones admiten foco y activación con D-pad y muestran el foco claramente.
+La navegación con D-pad se comprueba en emulador; esto no constituye un port
+del APK de Crunchyroll para Android TV.
+
 La referencia es el esquema `SubtitleStyle` de
 [Noir Player, revisión 54eb8d1](https://github.com/neura-neura/noir-player/blob/54eb8d176475186580259686050b8f4bec141aeb/src/App.tsx#L97).
 Las 15 propiedades están incluidas:
@@ -81,6 +88,13 @@ La importación CSS descarga fuentes TTF/OTF por HTTPS, las verifica con
 Las hojas que solo incluyen WOFF/WOFF2 necesitan una versión TTF/OTF. Una ruta
 local debe apuntar a un archivo que la aplicación pueda leer. El error se muestra
 en el panel y el estilo anterior se conserva cuando falla la importación.
+
+Desde 1.2.2, el importador conserva cada peso normal declarado en el CSS.
+GothamPro usa sus archivos auténticos Light (300), Regular (400), Medium (500),
+Bold (700) y Black (900), en lugar de intentar engrosar únicamente Regular.
+Las importaciones antiguas se actualizan en segundo plano al usar esa familia,
+con conexión a Internet. Si estás sin conexión, se conserva la fuente anterior;
+también puedes volver a pulsar **Cargar GothamPro de Noir** para reimportarla.
 
 Los subtítulos incrustados en los píxeles del vídeo no pueden personalizarse.
 Los cues de imagen de media3 conservan su dibujo nativo. Crunchyroll conserva el

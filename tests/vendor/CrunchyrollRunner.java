@@ -18,6 +18,7 @@ public final class CrunchyrollRunner extends Instrumentation {
             final Throwable[] failure = new Throwable[1];
             runOnMainSync(() -> { try { verify(); } catch (Throwable error) { failure[0] = error; } });
             if (failure[0] != null) throw new RuntimeException(failure[0]);
+            verifyNativeControls();
             result.putString("stream", "PASS: vendor JNI, real controller clock, real caption View, paused hot reload, expiration and native fallback\n");
             finish(-1, result);
         } catch (Throwable error) {
@@ -27,6 +28,46 @@ public final class CrunchyrollRunner extends Instrumentation {
     }
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);
+    }
+    private void verifyNativeControls() throws Exception {
+        android.content.Intent launch = getTargetContext().getPackageManager()
+            .getLaunchIntentForPackage("com.crunchyroll.crunchyroid");
+        android.app.Activity activity = startActivitySync(launch);
+        final View[] player = new View[1];
+        final Throwable[] failure = new Throwable[1];
+        runOnMainSync(() -> {
+            try {
+                ClassLoader loader = getTargetContext().getClassLoader();
+                player[0] = (View) loader.loadClass("androidx.media3.ui.PlayerView")
+                    .getConstructor(Context.class, android.util.AttributeSet.class).newInstance(activity, null);
+                ((android.view.ViewGroup) activity.getWindow().getDecorView()).addView(player[0],
+                    new android.view.ViewGroup.LayoutParams(800, 400));
+                loader.loadClass("app.aimal.extension.crunchyroll.AspectRatioHelper")
+                    .getMethod("addAspectRatioButton", View.class).invoke(null, player[0]);
+            } catch (Throwable error) { failure[0] = error; }
+        });
+        waitForIdleSync();
+        runOnMainSync(() -> {
+            try {
+                View controller = player[0].findViewById(activity.getResources()
+                    .getIdentifier("exo_controller", "id", activity.getPackageName()));
+                check(controller != null, "Actual controller ID missing");
+                View row = player[0].findViewById(0x7f0a9990);
+                check(row != null, "Actual player chips missing");
+                controller.setVisibility(View.VISIBLE);
+                player[0].getViewTreeObserver().dispatchOnPreDraw();
+                check(row.getVisibility() == View.VISIBLE, "Actual controller failed to reveal chips");
+                controller.setVisibility(View.GONE);
+                player[0].getViewTreeObserver().dispatchOnPreDraw();
+                check(row.getVisibility() == View.GONE, "Actual controller left ghost chips");
+                controller.setVisibility(View.VISIBLE);
+                player[0].getViewTreeObserver().dispatchOnPreDraw();
+                check(row.getVisibility() == View.VISIBLE, "Actual controller failed to restore chips");
+                ((android.view.ViewGroup) player[0].getParent()).removeView(player[0]);
+                activity.finish();
+            } catch (Throwable error) { failure[0] = error; }
+        });
+        if (failure[0] != null) throw new RuntimeException(failure[0]);
     }
     private static Field field(Class<?> owner, String name) throws Exception {
         Field field = owner.getDeclaredField(name); field.setAccessible(true); return field;

@@ -65,4 +65,5 @@ jobs:
           path: |
             ${{ runner.temp }}/aimal-fixtures/**/fixture-result.txt
             ${{ runner.temp }}/aimal-fixtures/**/font-result.txt
+            ${{ runner.temp }}/aimal-fixtures/**/controls-result.txt
             ${{ runner.temp }}/aimal-fixtures/**/patch-result.json
