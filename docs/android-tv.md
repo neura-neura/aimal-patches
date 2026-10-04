@@ -12,6 +12,11 @@ reproductor original y sus cues llegan al dibujo personalizado. Cambiar de
 idioma y desactivar los subtítulos actualiza esa selección. Si el contenido solo
 ofrece subtítulos incrustados, conserva el vídeo original.
 
+La versión 1.3.2 corrige el flujo antiguo usado por la Mi Box: antes se leía
+solo el mapa de closed captions y se omitían las pistas ASS. Por eso el editor
+cambiaba su vista previa, pero el episodio seguía usando subtítulos incrustados.
+Ahora se incluyen ambas clases de pista al seleccionar el idioma.
+
 Al actualizar desde el primer APK de TV, instala la nueva versión encima y
 cierra y vuelve a abrir el episodio una vez. A partir de ahí, los cambios de
 estilo se aplican al instante, también con la reproducción pausada.
@@ -19,7 +24,10 @@ estilo se aplican al instante, también con la reproducción pausada.
 La verificación usa las clases originales del APK 3.74.0, sus modelos de
 selección de vídeo y su ExoPlayer para reproducir un clip local con una pista
 ASS separada. Comprueba el dibujo, el cambio de estilo en pausa y la caducidad
-del subtítulo. No sustituye una prueba con sesión iniciada en una Mi Box.
+del subtítulo. También comprueba el flujo antiguo con pistas ASS y sin closed
+captions. La corrección 1.3.2 se comprobó además en una Xiaomi Mi Box 4 con
+Android 9 y sesión iniciada: el reproductor recibió la pista ASS en español
+y el usuario confirmó que los cambios de estilo se veían en el episodio.
 
 ## Usar el mando
 
