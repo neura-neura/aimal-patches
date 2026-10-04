@@ -1,4 +1,5 @@
 package com.crunchyroll.subtitles;
+import com.crunchyroll.subtitles.data.AssFrames;
 /** Shape fixture, not a replacement for testing the vendor's APK. */
 public final class SubtitlesRendererImpl implements SubtitlesRenderer {
     static { System.loadLibrary("aimalfixture"); }

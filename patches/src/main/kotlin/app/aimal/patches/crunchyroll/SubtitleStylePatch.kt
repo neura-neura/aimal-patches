@@ -58,12 +58,12 @@ val subtitleStylePatch = bytecodePatch(
         }
         var hookedCalls = 0
         callers.forEach { type ->
-            mutableClassDefBy(type).methods.forEach { method ->
-                val instructions = method.implementation?.instructions?.toList() ?: return@forEach
-                instructions.withIndex().reversed().forEach { (index, instruction) ->
+            mutableClassDefBy(type).methods.forEach methodLoop@ { method ->
+                val instructions = method.implementation?.instructions?.toList() ?: return@methodLoop
+                instructions.withIndex().reversed().forEach instructionLoop@ { (index, instruction) ->
                     val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference
                     if (ref == null || ref.definingClass !in owners || ref.name != render.name ||
-                        ref.parameterTypes != render.parameterTypes || ref.returnType != render.returnType) return@forEach
+                        ref.parameterTypes != render.parameterTypes || ref.returnType != render.returnType) return@instructionLoop
                     val hook = when (instruction) {
                         is RegisterRangeInstruction -> {
                             check(instruction.registerCount == 5)

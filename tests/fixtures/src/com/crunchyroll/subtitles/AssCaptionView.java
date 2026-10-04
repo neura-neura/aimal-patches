@@ -1,4 +1,5 @@
 package com.crunchyroll.subtitles;
+import com.crunchyroll.subtitles.data.AssFrames;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;

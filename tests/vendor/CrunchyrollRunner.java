@@ -1,0 +1,95 @@
+package app.aimal.verify;
+
+import android.app.Instrumentation;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.View;
+import java.lang.reflect.*;
+
+/** Runs against the user's patched 3.117.0 APK, including its actual libass JNI. */
+public final class CrunchyrollRunner extends Instrumentation {
+    @Override public void onCreate(Bundle args) { super.onCreate(args); start(); }
+    @Override public void onStart() {
+        Bundle result = new Bundle();
+        try {
+            final Throwable[] failure = new Throwable[1];
+            runOnMainSync(() -> { try { verify(); } catch (Throwable error) { failure[0] = error; } });
+            if (failure[0] != null) throw new RuntimeException(failure[0]);
+            result.putString("stream", "PASS: vendor JNI, real controller clock, real caption View, paused hot reload, expiration and native fallback\n");
+            finish(-1, result);
+        } catch (Throwable error) {
+            result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(error));
+            finish(1, result);
+        }
+    }
+    private static void check(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
+    }
+    private static Field field(Class<?> owner, String name) throws Exception {
+        Field field = owner.getDeclaredField(name); field.setAccessible(true); return field;
+    }
+    private static Bitmap draw(View view) {
+        Bitmap bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888);
+        view.draw(new Canvas(bitmap)); return bitmap;
+    }
+    private static int pixels(Bitmap image) {
+        int[] pixels = new int[image.getWidth() * image.getHeight()];
+        image.getPixels(pixels, 0, image.getWidth(), 0, 0, image.getWidth(), image.getHeight());
+        int count = 0; for (int pixel : pixels) if (Color.alpha(pixel) != 0) count++; return count;
+    }
+    private void verify() throws Exception {
+        Context context = getTargetContext(); ClassLoader loader = context.getClassLoader();
+        Class<?> viewClass = loader.loadClass("com.crunchyroll.subtitles.SubtitlesView");
+        View view = (View) viewClass.getConstructor(Context.class).newInstance(context);
+        Object renderer = field(viewClass, "subtitlesRenderer").get(view);
+        Class<?> rendererClass = renderer.getClass();
+        for (Method method : rendererClass.getMethods()) if (method.getName().equals("initialize")) {
+            check(Boolean.TRUE.equals(method.invoke(renderer, false, null)), "libass initialization failed");
+        }
+        rendererClass.getMethod("setFrameSize", int.class, int.class).invoke(renderer, 1920, 1080);
+        String script = "[Script Info]\nScriptType: v4.00+\nPlayResX: 1920\nPlayResY: 1080\n"
+            + "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+            + "Style: Default,Arial,48,&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,0,0,0,0,100,100,0,0,1,2,0,2,20,20,20,1\n"
+            + "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+            + "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Vendor JNI sample\n";
+        long handle = (Long) rendererClass.getMethod("loadTrack", String.class).invoke(renderer, script);
+        check(handle != 0, "Native track was not loaded");
+        Class<?> controllerClass = loader.loadClass("com.crunchyroll.subtitles.presentation.SubtitlesControllerImpl");
+        Object controller = null;
+        for (Constructor<?> constructor : controllerClass.getConstructors()) if (constructor.getParameterCount() == 5) {
+            controller = constructor.newInstance(view, renderer, null, 4, null);
+        }
+        check(controller != null, "Controller constructor missing");
+        field(controllerClass, "trackPointer").setLong(controller, handle);
+        Method update = controllerClass.getDeclaredMethod("updateSubtitlesPosition", long.class);
+        update.setAccessible(true);
+        view.layout(0, 0, 1920, 1080);
+        Class<?> settings = loader.loadClass("app.aimal.extension.subtitles.SubtitleSettings");
+        Object style = settings.getMethod("style", Context.class).invoke(null, context);
+        Field enabled = style.getClass().getField("enabled");
+        Field color = style.getClass().getField("textColor");
+        enabled.setBoolean(style, true); color.setInt(style, Color.GREEN);
+        settings.getMethod("changed", Context.class).invoke(null, context);
+        update.invoke(controller, 1500L);
+        Bitmap first = draw(view);
+        check(pixels(first) > 0, "Real view has no custom captions");
+        // Assert the call-site hook captured the correct native track and millisecond clock.
+        Class<?> styler = loader.loadClass("app.aimal.extension.crunchyroll.SubtitleStyler");
+        Object current = field(styler, "current").get(null);
+        check(current != null && "Vendor JNI sample".equals(field(current.getClass(), "text").get(current)), "Real controller clock hook missed");
+        color.setInt(style, Color.RED); settings.getMethod("changed", Context.class).invoke(null, context);
+        check(!first.sameAs(draw(view)), "Paused caption did not hot reload");
+        update.invoke(controller, 4500L);
+        check(pixels(draw(view)) == 0, "Expired caption remains visible");
+        update.invoke(controller, 1500L);
+        Bitmap customized = draw(view);
+        enabled.setBoolean(style, false); settings.getMethod("changed", Context.class).invoke(null, context);
+        Bitmap original = draw(view);
+        check(pixels(original) > 0 && !customized.sameAs(original), "Native libass fallback did not render");
+        rendererClass.getMethod("destroy", long.class).invoke(renderer, handle);
+        check(field(styler, "current").get(null) == null, "Native destroy did not clear captured track");
+    }
+}

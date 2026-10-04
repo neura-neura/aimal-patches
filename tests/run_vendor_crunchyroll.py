@@ -1,0 +1,64 @@
+"""Exercise actual 3.117.0 JNI/View hooks on an isolated emulator (no login).
+
+Uses the user's APK; never downloads or publishes the commercial application.
+Installs it under com.crunchyroll.crunchyroid using a temporary test signature.
+"""
+import argparse
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import zipfile
+
+p = argparse.ArgumentParser()
+p.add_argument("--sdk", type=Path, required=True)
+p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged 3.117.0 APK")
+p.add_argument("--out", type=Path, required=True)
+args = p.parse_args()
+out = args.out.resolve()
+out.mkdir(parents=True, exist_ok=True)
+tools = args.sdk / "build-tools/35.0.1"
+android = args.sdk / "platforms/android-35/android.jar"
+
+def run(*cmd, capture=False):
+    return subprocess.run([str(x) for x in cmd], check=True, text=True, capture_output=capture)
+
+devices = run("adb", "devices", capture=True).stdout.splitlines()[1:]
+connected = [line.split()[0] for line in devices if line.strip() and line.split()[-1] == "device"]
+if len(connected) != 1 or not connected[0].startswith("emulator-"):
+    raise RuntimeError("Connect exactly one isolated emulator; this runner does not install on physical devices")
+key = out / "vendor-test.jks"
+if not key.exists():
+    run("keytool", "-genkeypair", "-keystore", key, "-storepass", "android", "-keypass", "android",
+        "-alias", "test", "-keyalg", "RSA", "-validity", "7", "-dname", "CN=Aimal Vendor Test")
+classes = out / "classes"
+classes.mkdir(exist_ok=True)
+run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", android, "-d", classes,
+    Path(__file__).parent / "vendor/CrunchyrollRunner.java")
+jar = out / "runner.jar"
+with zipfile.ZipFile(jar, "w") as archive:
+    for file in classes.rglob("*.class"): archive.write(file, file.relative_to(classes).as_posix())
+manifest = out / "AndroidManifest.xml"
+manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.aimal.verify">
+<uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
+<application android:label="Aimal vendor test"/>
+<instrumentation android:name="app.aimal.verify.CrunchyrollRunner" android:targetPackage="com.crunchyroll.crunchyroid"/>
+</manifest>''', encoding="utf-8")
+test = out / "test.apk"
+run(tools / ("aapt2.exe" if os.name == "nt" else "aapt2"), "link", "-I", android, "--manifest", manifest, "-o", test)
+dex = out / "dex"
+dex.mkdir(exist_ok=True)
+run("java", "-cp", tools / "lib/d8.jar", "com.android.tools.r8.D8", "--min-api", "23", "--lib", android,
+    "--output", dex, jar)
+with zipfile.ZipFile(test, "a") as archive:
+    for file in dex.glob("*.dex"): archive.write(file, file.name)
+target = out / "target.apk"
+shutil.copyfile(args.apk, target)
+for apk in (test, target):
+    run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
+    run("adb", "install", "--no-incremental", "-r", apk)
+result = run("adb", "shell", "am", "instrument", "-w", "app.aimal.verify/app.aimal.verify.CrunchyrollRunner", capture=True)
+(out / "vendor-result.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
+print(result.stdout)
+if "PASS: vendor JNI" not in result.stdout:
+    raise RuntimeError("Vendor hook verification failed; see vendor-result.txt")
