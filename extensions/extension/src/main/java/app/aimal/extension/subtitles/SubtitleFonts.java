@@ -71,7 +71,7 @@ public final class SubtitleFonts {
         init(context);
         URL cssUrl = new URL(address);
         String css = new String(download(cssUrl, 1024 * 1024), StandardCharsets.UTF_8);
-        Matcher faces = Pattern.compile("@font-face\\s*\\{([^}]+)}", Pattern.CASE_INSENSITIVE).matcher(css);
+        Matcher faces = Pattern.compile("@font-face\\s*\\{([^}]+)\\}", Pattern.CASE_INSENSITIVE).matcher(css);
         List<String> faceBlocks = new ArrayList<>();
         while (faces.find()) faceBlocks.add(faces.group(1));
         // Prefer the regular upright face when a family provides many weights.

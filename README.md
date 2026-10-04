@@ -1,4 +1,9 @@
-# Aimal Patches
+# Aimal Patches — Noir subtitle customization fork
+
+Fork de `hashtagbasit/aimal-patches` con las 15 propiedades de estilo de Noir,
+vista previa y actualización inmediata durante la reproducción.
+[Guía de instalación, controles y validación en español](docs/subtitle-customization.md).
+
 
 A small bundle of [Morphe](https://morphe.software) patches for four streaming
 apps, all of it aimed at one thing: giving the player back the controls the app
@@ -34,15 +39,15 @@ adds it back.
 
 ## Install
 
-[**Add this bundle to Morphe Manager**](https://morphe.software/add-source?github=hashtagbasit/aimal-patches)
+[**Add this bundle to Morphe Manager**](https://morphe.software/add-source?github=neura-neura/aimal-patches)
 
 Or add it by hand: Manager → patch sources → add source →
-`https://github.com/hashtagbasit/aimal-patches`
+`https://github.com/neura-neura/aimal-patches`
 
 With Morphe Desktop:
 
 ```
-java -jar morphe-desktop-*-all.jar patch -p https://github.com/hashtagbasit/aimal-patches app.apkm
+java -jar morphe-desktop-*-all.jar patch -p https://github.com/neura-neura/aimal-patches app.apkm
 ```
 
 All four apps are distributed as split bundles (`.apkm`); Manager and Desktop
@@ -51,7 +56,7 @@ merge them for you.
 ## Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.1.0](https://github.com/hashtagbasit/aimal-patches/releases/tag/v1.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;8 patches total
+> **[v1.1.0](https://github.com/neura-neura/aimal-patches/releases/tag/v1.1.0)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;8 patches total
 <details open>
 <summary>📦 Crunchyroll&nbsp;&nbsp;•&nbsp;&nbsp;3 patches</summary>
 <br>
@@ -129,13 +134,11 @@ player when it attaches to the window — deliberately self-contained, because
 tying it to the app's own show/hide callbacks broke on 3.117.0 when those
 stopped firing.
 
-Crunchyroll's subtitles are the interesting one. They are rendered natively by
-libass straight into bitmaps, so by the time anything reaches a View there is no
-text left to restyle. The entire ASS script does pass through one method as a
-String on its way into the library, though, and ASS carries its styling as plain
-text — so the script is rewritten in flight and libass renders the result. The
-catch is that it only takes effect when a track loads, which is why the chips
-say so when you tap them.
+Crunchyroll keeps its native ASS scripts and libass handles intact. The subtitle
+patch captures the original script, follows the renderer's timestamp and draws
+basic text with the shared style renderer. A dedicated SUBTÍTULOS dialog shows
+a live sample and redraws active subtitles immediately, including paused frames.
+Turning custom styling off restores the native ASS drawing.
 
 **HBO Max, Disney+ and Viki** share a single patch. All three play through
 androidx.media3, so instead of fingerprinting three different player UIs it
@@ -172,12 +175,13 @@ chain, so the player takes the full width. On a phone it is a no-op.
 
 ## Status
 
-Crunchyroll and HBO Max are tested on device. Viki is built and verified
-against 26.5.0 (versionCode 78800).
+The subtitle fork builds in GitHub Actions. Injected Crunchyroll and media3 hooks,
+all 15 visual properties, persistence, ASS timing and native fallback passed in
+Android emulator shape fixtures. The panel was inspected in portrait and landscape.
 
-**Disney+ is written against a decompiled 26.14.1 but has not been run yet** —
-the hooks it needs were verified in the bytecode, not in the app. Reports
-welcome.
+Commercial APK fingerprints and authenticated playback have **not** been tested
+for this fork. Treat app compatibility as experimental; the listed reference
+versions come from upstream. See the Spanish guide for limits and reproduction.
 
 ## Building
 

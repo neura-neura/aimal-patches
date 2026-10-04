@@ -116,6 +116,11 @@ public final class TestActivity extends Activity {
         check(timeline.at(2000).endsWith("Overlap"), "Overlapping cues lost");
         check(timeline.at(3000).equals("Overlap"), "Cue end boundary wrong");
         check(timeline.at(1500).startsWith("Hello"), "Backward seek failed");
+        AssTimeline reordered = new AssTimeline("[Events]\nFormat: End, Start, Text\n"
+                + "Dialogue: 0:00:03.00,0:00:01.00,{\\b1}Bold, text{\\b0}\\NNext\n"
+                + "Dialogue: invalid,invalid,Malformed\n"
+                + "Dialogue: 0:00:03.00,0:00:01.00,{\\p1}m 0 0 l 1 1{\\p0}Visible\n");
+        check(reordered.at(1500).equals("Bold, text\nNext\nVisible"), "Reordered columns, overrides or ASS drawings failed");
         SubtitleSettings.reset(this);
     }
     private Bitmap paint(String text, SubtitleStyle style) {

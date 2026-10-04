@@ -6,6 +6,8 @@ import sys
 
 wrapper = str(Path(__file__).with_name("gradle_run.py"))
 base = [sys.executable, wrapper]
+for bundle in (Path(__file__).resolve().parents[2] / "patches/build/libs").glob("patches-*.mpp"):
+    bundle.unlink()
 created = subprocess.run(base + ["create"], text=True, capture_output=True, check=True)
 workflow = json.loads(created.stdout)["workflow"]
 print(created.stdout, flush=True)

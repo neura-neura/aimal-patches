@@ -27,3 +27,37 @@ jobs:
             patches/build/libs/*.mpp
             patches-list.json
           if-no-files-found: error
+  fixtures:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@v4
+        with:
+          name: subtitle-bundle
+          path: bundle
+      - name: Install fixture build tools and Morphe Desktop
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.1'
+          gh release download v1.18.0 -R MorpheApp/morphe-desktop --pattern '*-all.jar' --dir "$RUNNER_TEMP/aimal-tools"
+      - name: Execute patched fixtures on Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: python3 tests/run_fixtures.py --sdk "$ANDROID_HOME" --bundle bundle/patches/build/libs/patches-1.1.0.mpp --morphe "$RUNNER_TEMP/aimal-tools/morphe-desktop-1.18.0-all.jar" --out "$RUNNER_TEMP/aimal-fixtures" --fonts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: subtitle-fixture-results
+          path: |
+            ${{ runner.temp }}/aimal-fixtures/**/fixture-result.txt
+            ${{ runner.temp }}/aimal-fixtures/**/font-result.txt
+            ${{ runner.temp }}/aimal-fixtures/**/patch-result.json

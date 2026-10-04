@@ -1,0 +1,50 @@
+"""Patch, sign and execute the two Android shape fixtures on a connected emulator."""
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+p = argparse.ArgumentParser()
+p.add_argument("--sdk", type=Path, required=True)
+p.add_argument("--bundle", type=Path, required=True)
+p.add_argument("--morphe", type=Path, required=True)
+p.add_argument("--out", type=Path, required=True)
+p.add_argument("--fonts", action="store_true")
+args = p.parse_args()
+args.out.mkdir(parents=True, exist_ok=True)
+tools = args.sdk / "build-tools/35.0.1"
+def run(*command, capture=False, check=True):
+    return subprocess.run([str(x) for x in command], text=True, capture_output=capture, check=check)
+
+key = args.out / "fixture-key.jks"
+if not key.exists():
+    run("keytool", "-genkeypair", "-keystore", key, "-storepass", "android", "-keypass", "android", "-alias", "fixture",
+        "-keyalg", "RSA", "-validity", "7", "-dname", "CN=Aimal Fixture")
+for app, package, patch in [
+    ("crunchyroll", "com.crunchyroll.crunchyroid", "Subtitle styling"),
+    ("media3", "com.wbd.stream", "Playback speed and aspect ratio"),
+]:
+    out = args.out / app
+    run(sys.executable, Path(__file__).with_name("build_fixture.py"), "--sdk", args.sdk, "--app", app, "--out", out)
+    apk = out / "patched.apk"
+    run("java", "-jar", args.morphe, "patch", "-p", args.bundle, "--exclusive", "-e", patch,
+        out / "fixture.apk", "-o", apk, "--unsigned", "-r", out / "patch-result.json")
+    run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
+    run("adb", "install", "-r", apk)
+    run("adb", "shell", "am", "force-stop", package)
+    run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt")
+    run("adb", "shell", "am", "start", "-n", package + "/fixture.TestActivity", "--ez", "fonts", str(args.fonts).lower())
+    files = ["fixture-result.txt"] + (["font-result.txt"] if args.fonts else [])
+    for file in files:
+        deadline = time.monotonic() + 55
+        while time.monotonic() < deadline:
+            result = run("adb", "shell", "run-as", package, "cat", "files/" + file, capture=True, check=False)
+            if result.returncode == 0 and result.stdout:
+                print(package + ": " + result.stdout, flush=True)
+                (out / file).write_text(result.stdout, encoding="utf-8")
+                if not result.stdout.startswith("PASS:"): sys.exit(1)
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError(package + ": timed out waiting for " + file)
