@@ -51,7 +51,34 @@ public final class TestActivity extends Activity {
                 check(!equal(medium, regular) && !equal(black, medium), "Imported Gotham weights collapse to regular");
                 check(SubtitleFonts.resolve("GothamPro", 900).getWeight() == 900, "Black face weight metadata missing");
                 check(SubtitleFonts.resolve("GothamPro", 500).getWeight() == 500, "Medium face weight metadata missing");
-                result = "PASS: all Gotham weights imported, true Medium/Black faces, 900 visibly thicker";
+                Bitmap comparison = Bitmap.createBitmap(1920, 510, Bitmap.Config.ARGB_8888);
+                Canvas image = new Canvas(comparison); image.drawColor(0xFF171A20);
+                android.graphics.Paint label = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                label.setTextSize(32); label.setColor(Color.WHITE);
+                Bitmap[] samples = {regular, medium, black}; String[] labels = {"400 Regular", "500 Medium", "900 Black"};
+                for (int i = 0; i < 3; i++) {
+                    image.drawBitmap(Bitmap.createBitmap(samples[i], 0, 910, 1920, 170), 0, i * 170, null);
+                    image.drawText(labels[i], 20, i * 170 + 40, label);
+                }
+                try (java.io.OutputStream out = openFileOutput("gotham-weights.png", MODE_PRIVATE)) {
+                    comparison.compress(Bitmap.CompressFormat.PNG, 100, out);
+                }
+                // Simulate the 1.2.1 cache, containing only the regular face.
+                java.io.File directory = new java.io.File(getFilesDir(), "aimal-fonts");
+                String prefix = "font-" + Integer.toHexString("GothamPro".hashCode());
+                java.io.File legacy = new java.io.File(directory, prefix);
+                try (java.io.InputStream in = new java.io.FileInputStream(new java.io.File(directory, prefix + "-w400"));
+                     java.io.OutputStream out = new java.io.FileOutputStream(legacy)) {
+                    byte[] buffer = new byte[8192]; int count;
+                    while ((count = in.read(buffer)) != -1) out.write(buffer, 0, count);
+                }
+                for (java.io.File file : directory.listFiles()) if (file.getName().startsWith(prefix + "-w") || file.getName().equals(prefix + ".weights-v2")) file.delete();
+                SubtitleStyle saved = SubtitleSettings.style(this); saved.fontFamily = "GothamPro"; saved.fontCssUrl = SubtitleFonts.DEFAULT_CSS;
+                SubtitleFonts.init(this);
+                long deadline = android.os.SystemClock.uptimeMillis() + 30000;
+                while (!new java.io.File(directory, prefix + ".weights-v2").isFile() && android.os.SystemClock.uptimeMillis() < deadline) Thread.sleep(100);
+                check(new java.io.File(directory, prefix + "-w900").isFile(), "Legacy cache was not upgraded automatically");
+                result = "PASS: actual Gotham weights, 900 visibly thicker, legacy cache automatically upgraded";
             } catch (Throwable error) { result = "FAIL: " + error; }
             try (java.io.OutputStream out = openFileOutput("font-result.txt", MODE_PRIVATE)) {
                 out.write(result.getBytes(java.nio.charset.StandardCharsets.UTF_8));
