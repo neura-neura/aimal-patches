@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/neura-neura/aimal-patches/compare/v1.3.2...v1.3.3) (2026-10-04)
+
+
+### Bug Fixes
+
+* use English throughout subtitle customization and guides ([ccf6560](https://github.com/neura-neura/aimal-patches/commit/ccf6560de46935c2613382232efbb2f51c344d81))
+
 ## [1.3.2](https://github.com/neura-neura/aimal-patches/compare/v1.3.1...v1.3.2) (2026-10-04)
 
 
