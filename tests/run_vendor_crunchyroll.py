@@ -15,6 +15,7 @@ p.add_argument("--sdk", type=Path, required=True)
 p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged 3.117.0 APK")
 p.add_argument("--out", type=Path, required=True)
 p.add_argument("--reuse-target", action="store_true", help="Rebuild only instrumentation against the already installed APK signed by this output directory's test key")
+p.add_argument("--tv", action="store_true", help="Verify actual Android TV 3.74.0 media3 captions")
 args = p.parse_args()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -36,16 +37,17 @@ if not key.exists():
         "-alias", "test", "-keyalg", "RSA", "-validity", "7", "-dname", "CN=Aimal Vendor Test")
 classes = out / "classes"
 classes.mkdir(exist_ok=True)
+runner = "CrunchyrollTvRunner" if args.tv else "CrunchyrollRunner"
 run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", android, "-d", classes,
-    Path(__file__).parent / "vendor/CrunchyrollRunner.java")
+    Path(__file__).parent / ("vendor/" + runner + ".java"))
 jar = out / "runner.jar"
 with zipfile.ZipFile(jar, "w") as archive:
     for file in classes.rglob("*.class"): archive.write(file, file.relative_to(classes).as_posix())
 manifest = out / "AndroidManifest.xml"
-manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.aimal.verify">
+manifest.write_text(f'''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.aimal.verify">
 <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/>
 <application android:label="Aimal vendor test"/>
-<instrumentation android:name="app.aimal.verify.CrunchyrollRunner" android:targetPackage="com.crunchyroll.crunchyroid"/>
+<instrumentation android:name="app.aimal.verify.{runner}" android:targetPackage="com.crunchyroll.crunchyroid"/>
 </manifest>''', encoding="utf-8")
 test = out / "test.apk"
 run(tools / ("aapt2.exe" if os.name == "nt" else "aapt2"), "link", "-I", android, "--manifest", manifest, "-o", test)
@@ -60,8 +62,8 @@ shutil.copyfile(args.apk, target)
 for apk in ((test,) if args.reuse_target else (test, target)):
     run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
     run("adb", "install", "--no-incremental", "-r", apk)
-result = run("adb", "shell", "am", "instrument", "-w", "app.aimal.verify/app.aimal.verify.CrunchyrollRunner", capture=True)
+result = run("adb", "shell", "am", "instrument", "-w", "app.aimal.verify/app.aimal.verify." + runner, capture=True)
 (out / "vendor-result.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
 print(result.stdout)
-if "PASS: vendor JNI" not in result.stdout:
+if ("PASS: TV original" if args.tv else "PASS: vendor JNI") not in result.stdout:
     raise RuntimeError("Vendor hook verification failed; see vendor-result.txt")

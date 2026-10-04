@@ -38,7 +38,7 @@ for app, package, patch in [
     run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
     run("adb", "install", "-r", apk)
     run("adb", "shell", "am", "force-stop", package)
-    run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt", "files/controls-result.txt")
+    run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt", "files/controls-result.txt", "files/tv-result.txt")
     activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if app == "crunchyroll-tv" else "fixture.TestActivity"
     run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/" + activity, "--ez", "fonts", str(args.fonts).lower())
     files = ["fixture-result.txt"] + (["tv-result.txt"] if app == "crunchyroll-tv" else []) + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
