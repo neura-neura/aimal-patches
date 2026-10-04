@@ -65,6 +65,13 @@ public final class TestActivity extends Activity {
         renderer.renderFrame(42, 1500);
         Bitmap first = render(view);
         check(first.getPixel(0, 0) != Color.RED && opaquePixels(first) > 0, "Crunchyroll draw hook missing");
+        check(equal(first, paint("Hello, world!\nSecond line", SubtitleSettings.style(this))), "ASS render clock or text is wrong");
+        long preloaded = renderer.loadTrack(SCRIPT.replace("Hello, world!", "Preloaded language"));
+        renderer.renderFrame(42, 1500);
+        check(equal(first, render(view)), "Preloaded language replaced the active native handle");
+        renderer.releaseTrack(preloaded);
+        renderer.renderFrame(42, 1500);
+        check(equal(first, render(view)), "Releasing another track cleared the current captions");
         SubtitleStyle style = SubtitleSettings.style(this); style.textColor = Color.GREEN;
         SubtitleSettings.changed(this);
         check(!equal(first, render(view)), "Paused frame did not hot reload");
@@ -127,7 +134,11 @@ public final class TestActivity extends Activity {
         Bitmap bitmap = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888);
         new CaptionPainter().draw(new Canvas(bitmap), 1920, 1080, text, style, 0); return bitmap;
     }
-    private Bitmap render(View view) { Bitmap b = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888); view.draw(new Canvas(b)); return b; }
+    private Bitmap render(View view) {
+        view.measure(View.MeasureSpec.makeMeasureSpec(1920, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(1080, View.MeasureSpec.EXACTLY));
+        view.layout(0, 0, 1920, 1080);
+        Bitmap b = Bitmap.createBitmap(1920, 1080, Bitmap.Config.ARGB_8888); view.draw(new Canvas(b)); return b;
+    }
     private static int opaquePixels(Bitmap bitmap) { int[] pixels = pixels(bitmap); int count = 0; for (int pixel : pixels) if (Color.alpha(pixel) > 0) count++; return count; }
     private static boolean equal(Bitmap a, Bitmap b) { return Arrays.equals(pixels(a), pixels(b)); }
     private static int[] pixels(Bitmap b) { int[] values = new int[b.getWidth() * b.getHeight()]; b.getPixels(values, 0, b.getWidth(), 0, 0, b.getWidth(), b.getHeight()); return values; }

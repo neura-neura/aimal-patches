@@ -24,11 +24,18 @@ val subtitleStylePatch = bytecodePatch(
 
     execute {
         val load = SubtitlesLoadTrackFingerprint.method
-        load.addInstructions(0, """
-            invoke-static/range { p0 .. p1 }, $STYLER->capture(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/String;
-            move-result-object p1
-        """)
         val renderer = mutableClassDefBy(load.definingClass)
+        load.setName("aimalOriginalLoadTrack")
+        val loadWrapper = MutableMethod(ImmutableMethod(renderer.type, "loadTrack", load.parameters,
+            load.returnType, load.accessFlags, load.annotations, load.hiddenApiRestrictions,
+            ImmutableMethodImplementation(4, emptyList(), emptyList(), emptyList())))
+        loadWrapper.addInstructions("""
+            invoke-virtual/range { p0 .. p1 }, ${renderer.type}->aimalOriginalLoadTrack(Ljava/lang/String;)J
+            move-result-wide v0
+            invoke-static { p0, p1, v0, v1 }, $STYLER->onLoaded(Ljava/lang/Object;Ljava/lang/String;J)V
+            return-wide v0
+        """)
+        renderer.methods.add(loadWrapper)
         // Fail explicitly if the expected clock is absent instead of silently
         // presenting settings that cannot update the real captions.
         val render = renderer.methods.singleOrNull {
@@ -37,17 +44,22 @@ val subtitleStylePatch = bytecodePatch(
                 it.returnType.startsWith("L") && !AccessFlags.STATIC.isSet(it.accessFlags)
         } ?: throw PatchException("Cannot identify Crunchyroll's ASS render clock. This version needs a new renderer fingerprint.")
         val timestampIndex = render.parameterTypes.indexOfLast { it == "J" }
+        val handleIndex = render.parameterTypes.indexOfFirst { it == "J" }
+        val handleRegister = 1 + render.parameterTypes.take(handleIndex).sumOf { if (it == "J" || it == "D") 2 else 1 }
         val timeRegister = 1 + render.parameterTypes.take(timestampIndex).sumOf { if (it == "J" || it == "D") 2 else 1 }
         val argumentRegisters = 1 + render.parameterTypes.sumOf { if (it == "J" || it == "D") 2 else 1 }
         val name = render.name
         render.setName("aimalOriginalRender")
         val wrapper = MutableMethod(ImmutableMethod(renderer.type, name, render.parameters,
             render.returnType, render.accessFlags, render.annotations, render.hiddenApiRestrictions,
-            ImmutableMethodImplementation(argumentRegisters + 3, emptyList(), emptyList(), emptyList())))
+            ImmutableMethodImplementation(argumentRegisters + 5, emptyList(), emptyList(), emptyList())))
+        val copyHandle = if (handleIndex != timestampIndex) "move-wide/from16 v1, p$handleRegister"
+            else "const-wide v1, -0x8000000000000000L"
         wrapper.addInstructions("""
             move-object/from16 v0, p0
-            move-wide/from16 v1, p$timeRegister
-            invoke-static { v0, v1, v2 }, $STYLER->onRender(Ljava/lang/Object;J)V
+            $copyHandle
+            move-wide/from16 v3, p$timeRegister
+            invoke-static { v0, v1, v2, v3, v4 }, $STYLER->onRender(Ljava/lang/Object;JJ)V
             invoke-virtual/range { p0 .. p${argumentRegisters - 1} }, ${renderer.type}->aimalOriginalRender(${render.parameterTypes.joinToString("")})${render.returnType}
             move-result-object v0
             return-object v0
@@ -55,7 +67,9 @@ val subtitleStylePatch = bytecodePatch(
         renderer.methods.add(wrapper)
         renderer.methods.filter { it.name in setOf("release", "releaseTrack", "unloadTrack", "clearTrack", "close") &&
             it.implementation != null && !AccessFlags.STATIC.isSet(it.accessFlags) }.forEach {
-            it.addInstruction(0, "invoke-static/range { p0 .. p0 }, $STYLER->clear(Ljava/lang/Object;)V")
+            if (it.parameterTypes == listOf("J")) it.addInstruction(0,
+                "invoke-static/range { p0 .. p2 }, $STYLER->clearTrack(Ljava/lang/Object;J)V")
+            else it.addInstruction(0, "invoke-static/range { p0 .. p0 }, $STYLER->clear(Ljava/lang/Object;)V")
         }
         val captionView = mutableClassDefByOrNull { clazz ->
             clazz.fields.any { it.type.contains("AssFrame") } &&

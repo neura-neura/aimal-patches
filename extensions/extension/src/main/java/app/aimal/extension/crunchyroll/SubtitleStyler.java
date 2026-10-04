@@ -5,10 +5,13 @@ import android.util.Log;
 import android.view.View;
 import app.aimal.extension.subtitles.*;
 import java.util.WeakHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /** Keeps native tracks intact; uses their exact render clock for the custom text. */
 public final class SubtitleStyler {
-    private static final WeakHashMap<Object, Track> tracks = new WeakHashMap<>();
+    private static final WeakHashMap<Object, Map<Long, Track>> tracks = new WeakHashMap<>();
+    private static final WeakHashMap<Object, Long> latest = new WeakHashMap<>();
     private static final WeakHashMap<View, CaptionPainter> painters = new WeakHashMap<>();
     private static volatile Track current;
     private static final class Track {
@@ -17,24 +20,36 @@ public final class SubtitleStyler {
     }
     private SubtitleStyler() { }
     static void init(Context context) { SubtitleFonts.init(context); SubtitleSettings.style(context); }
-    public static String capture(Object renderer, String script) {
+    public static void onLoaded(Object renderer, String script, long handle) {
         try {
             synchronized (tracks) {
                 Track track = new Track(script == null ? "" : script);
-                tracks.put(renderer, track); current = track;
+                Map<Long, Track> rendererTracks = tracks.get(renderer);
+                if (rendererTracks == null) { rendererTracks = new HashMap<>(); tracks.put(renderer, rendererTracks); }
+                rendererTracks.put(handle, track); latest.put(renderer, handle);
             }
         } catch (Throwable error) { Log.e("AimalSubtitles", "Cannot parse ASS track", error); current = null; }
-        return script;
     }
-    public static void onRender(Object renderer, long milliseconds) {
+    public static void onRender(Object renderer, long handle, long milliseconds) {
         synchronized (tracks) {
-            Track track = tracks.get(renderer);
+            Map<Long, Track> rendererTracks = tracks.get(renderer);
+            Long selected = handle == Long.MIN_VALUE ? latest.get(renderer) : handle;
+            Track track = rendererTracks == null ? null : rendererTracks.get(selected);
             if (track == null) { current = null; return; }
             track.text = track.timeline.at(milliseconds); current = track;
         }
     }
     public static void clear(Object renderer) {
-        synchronized (tracks) { Track old = tracks.remove(renderer); if (old == current) current = null; }
+        synchronized (tracks) {
+            Map<Long, Track> old = tracks.remove(renderer); latest.remove(renderer);
+            if (old != null && old.containsValue(current)) current = null;
+        }
+    }
+    public static void clearTrack(Object renderer, long handle) {
+        synchronized (tracks) {
+            Map<Long, Track> rendererTracks = tracks.get(renderer);
+            if (rendererTracks != null && rendererTracks.remove(handle) == current) current = null;
+        }
     }
     public static boolean draw(View view, Canvas canvas) {
         try {

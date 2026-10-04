@@ -52,7 +52,7 @@ jobs:
           api-level: 35
           arch: x86_64
           disable-animations: true
-          script: python3 tests/run_fixtures.py --sdk "$ANDROID_HOME" --bundle bundle/patches/build/libs/patches-1.1.0.mpp --morphe "$RUNNER_TEMP/aimal-tools/morphe-desktop-1.18.0-all.jar" --out "$RUNNER_TEMP/aimal-fixtures" --fonts
+          script: python3 tests/run_fixtures.py --sdk "$ANDROID_HOME" --bundle bundle/patches/build/libs --morphe "$RUNNER_TEMP/aimal-tools/morphe-desktop-1.18.0-all.jar" --out "$RUNNER_TEMP/aimal-fixtures" --fonts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
