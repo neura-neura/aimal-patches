@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 public final class SubtitleFonts {
     public static final String DEFAULT_CSS = "https://raw.githubusercontent.com/neura-neura/noir-player/54eb8d176475186580259686050b8f4bec141aeb/public/vendor/gotham-pro-font/fonts.min.css";
     private static final Map<String, Typeface> cache = new HashMap<>();
+    private static final Object imports = new Object();
     private static Context app;
     private SubtitleFonts() { }
 
@@ -120,6 +121,9 @@ public final class SubtitleFonts {
 
     /** Downloads SFNT fonts, which Android supports natively, off the UI thread. */
     public static List<String> loadCss(Context context, String address) throws Exception {
+        synchronized (imports) { return importCss(context, address); }
+    }
+    private static List<String> importCss(Context context, String address) throws Exception {
         synchronized (SubtitleFonts.class) { app = context.getApplicationContext(); }
         URL cssUrl = new URL(address);
         String css = new String(download(cssUrl, 1024 * 1024), StandardCharsets.UTF_8);
