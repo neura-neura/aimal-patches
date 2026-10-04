@@ -3,14 +3,11 @@ package app.aimal.extension.crunchyroll;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -89,17 +86,26 @@ public final class AspectRatioHelper {
             // Top-left: the top-right corner is where Crunchyroll puts cast,
             // settings and close, and the chips were landing on top of them.
             params.gravity = Gravity.TOP | Gravity.START;
-            params.topMargin = dp(ctx, 24);
+            params.topMargin = dp(ctx, 64);
             params.leftMargin = dp(ctx, 16);
             row.setLayoutParams(params);
 
             // Observe the real controller's view, including its ancestor visibility.
             // No touch/key listeners are replaced, so the app keeps its native input handling.
-            final int controllerId = ctx.getResources().getIdentifier("exo_controller", "id", ctx.getPackageName());
-            final View controller = controllerId == 0 ? null : parent.findViewById(controllerId);
+            final View controller = findController(parent);
             row.setVisibility(View.GONE);
             final android.view.ViewTreeObserver.OnPreDrawListener visibility = () -> {
-                boolean shown = controller != null && controller.isShown() && controller.getAlpha() > 0f;
+                boolean shown = visibleController(controller);
+                if (shown && controller.getHeight() > 0) {
+                    int[] anchor = new int[2], origin = new int[2];
+                    controller.getLocationOnScreen(anchor);
+                    playerView.getLocationOnScreen(origin);
+                    int top = Math.max(dp(ctx, 24), anchor[1] - origin[1] + controller.getHeight() + dp(ctx, 4));
+                    if (params.topMargin != top) {
+                        params.topMargin = top;
+                        row.setLayoutParams(params);
+                    }
+                }
                 int next = shown ? View.VISIBLE : View.GONE;
                 if (row.getVisibility() != next) row.setVisibility(next);
                 return true;
@@ -141,6 +147,40 @@ public final class AspectRatioHelper {
 
         } catch (Throwable ignored) {
         }
+    }
+
+    private static View findController(ViewGroup root) {
+        // Crunchyroll disables exo_controller and fades its proprietary toolbar.
+        View toolbar = findCrunchyrollToolbar(root);
+        if (toolbar != null) return toolbar;
+        int id = root.getResources().getIdentifier("exo_controller", "id", root.getContext().getPackageName());
+        return id == 0 ? null : root.findViewById(id);
+    }
+
+    private static View findCrunchyrollToolbar(View view) {
+        if (view.getClass().getName().equals("com.crunchyroll.player.presentation.controls.PlayerControlsLayout")) {
+            try {
+                return (View) view.getClass().getMethod("getPlayerToolbar").invoke(view);
+            } catch (ReflectiveOperationException ignored) { }
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = findCrunchyrollToolbar(group.getChildAt(i));
+                if (found != null) return found;
+            }
+        }
+        return null;
+    }
+
+    private static boolean visibleController(View controller) {
+        if (controller == null || !controller.isShown()) return false;
+        for (View view = controller; view != null; ) {
+            if (view.getAlpha() <= 0f) return false;
+            android.view.ViewParent parent = view.getParent();
+            view = parent instanceof View ? (View) parent : null;
+        }
+        return true;
     }
 
     private static TextView chip(Context ctx, String text) {

@@ -19,7 +19,7 @@ public final class CrunchyrollRunner extends Instrumentation {
             runOnMainSync(() -> { try { verify(); } catch (Throwable error) { failure[0] = error; } });
             if (failure[0] != null) throw new RuntimeException(failure[0]);
             verifyNativeControls();
-            result.putString("stream", "PASS: vendor JNI, real controller clock, real caption View, paused hot reload, expiration and native fallback\n");
+            result.putString("stream", "PASS: vendor JNI, real controller clock, real caption View, paused hot reload, expiration, native fallback and proprietary playback controls\n");
             finish(-1, result);
         } catch (Throwable error) {
             result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(error));
@@ -38,7 +38,7 @@ public final class CrunchyrollRunner extends Instrumentation {
         runOnMainSync(() -> {
             try {
                 ClassLoader loader = getTargetContext().getClassLoader();
-                player[0] = (View) loader.loadClass("androidx.media3.ui.PlayerView")
+                player[0] = (View) loader.loadClass("com.crunchyroll.player.presentation.playerview.InternalPlayerViewLayout")
                     .getConstructor(Context.class, android.util.AttributeSet.class).newInstance(activity, null);
                 ((android.view.ViewGroup) activity.getWindow().getDecorView()).addView(player[0],
                     new android.view.ViewGroup.LayoutParams(800, 400));
@@ -49,18 +49,23 @@ public final class CrunchyrollRunner extends Instrumentation {
         waitForIdleSync();
         runOnMainSync(() -> {
             try {
-                View controller = player[0].findViewById(activity.getResources()
+                View unused = player[0].findViewById(activity.getResources()
                     .getIdentifier("exo_controller", "id", activity.getPackageName()));
+                check(unused != null, "media3 controller missing");
+                unused.setVisibility(View.GONE);
+                View controls = player[0].findViewById(2131428040);
+                check(controls != null, "Proprietary controls missing");
+                View controller = (View) controls.getClass().getMethod("getPlayerToolbar").invoke(controls);
                 check(controller != null, "Actual controller ID missing");
                 View row = player[0].findViewById(0x7f0a9990);
                 check(row != null, "Actual player chips missing");
                 controller.setVisibility(View.VISIBLE);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
                 check(row.getVisibility() == View.VISIBLE, "Actual controller failed to reveal chips");
-                controller.setVisibility(View.GONE);
+                controller.setAlpha(0f);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
                 check(row.getVisibility() == View.GONE, "Actual controller left ghost chips");
-                controller.setVisibility(View.VISIBLE);
+                controller.setAlpha(1f);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
                 check(row.getVisibility() == View.VISIBLE, "Actual controller failed to restore chips");
                 ((android.view.ViewGroup) player[0].getParent()).removeView(player[0]);
