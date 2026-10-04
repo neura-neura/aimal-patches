@@ -75,6 +75,7 @@ public final class SubtitlePanel {
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         if (tv) header.addView(button("FIT / STRETCH", aspect));
         Button close = button("Cerrar", () -> dialog.dismiss());
+        if (tv) close.setFocusableInTouchMode(true);
         header.addView(close);
         shell.addView(header);
         preview = new CaptionView(context);
