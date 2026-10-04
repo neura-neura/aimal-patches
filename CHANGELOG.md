@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/neura-neura/aimal-patches/compare/v1.3.1...v1.3.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* read legacy TV ASS subtitles separately from closed captions ([90f0dfc](https://github.com/neura-neura/aimal-patches/commit/90f0dfc7f1c366815a59a0a35cd6e315fd56400e))
+
 ## [1.3.1](https://github.com/neura-neura/aimal-patches/compare/v1.3.0...v1.3.1) (2026-10-04)
 
 
