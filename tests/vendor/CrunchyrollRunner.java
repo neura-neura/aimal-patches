@@ -32,20 +32,38 @@ public final class CrunchyrollRunner extends Instrumentation {
     private void verifyNativeControls() throws Exception {
         android.content.Intent launch = getTargetContext().getPackageManager()
             .getLaunchIntentForPackage("com.crunchyroll.crunchyroid");
+        // StartupActivity redirects and detaches its window while waiting for idle.
+        // Settings is a stable FragmentActivity host and requires no watch session.
+        launch.setClassName("com.crunchyroll.crunchyroid", "com.ellation.crunchyroll.presentation.main.settings.SettingsBottomBarActivity");
         android.app.Activity activity = startActivitySync(launch);
         final View[] player = new View[1];
+        final View[] proprietaryControls = new View[1];
         final Throwable[] failure = new Throwable[1];
         runOnMainSync(() -> {
             try {
                 ClassLoader loader = getTargetContext().getClassLoader();
-                player[0] = (View) loader.loadClass("com.crunchyroll.player.presentation.playerview.InternalPlayerViewLayout")
+                // The complete player requires an authenticated watch-screen host.
+                // Mount its actual proprietary control component on media3 without login.
+                player[0] = (View) loader.loadClass("androidx.media3.ui.PlayerView")
                     .getConstructor(Context.class, android.util.AttributeSet.class).newInstance(activity, null);
+                proprietaryControls[0] = (View) loader.loadClass("com.crunchyroll.player.presentation.controls.PlayerControlsLayout")
+                    .getConstructor(Context.class, android.util.AttributeSet.class).newInstance(activity, null);
+                // Timeline presenters require a watch session. Keep the real toolbar
+                // and its actual controls owner; exclude unrelated timeline widgets.
+                View toolbar = (View) proprietaryControls[0].getClass().getMethod("getPlayerToolbar").invoke(proprietaryControls[0]);
+                ((android.view.ViewGroup) toolbar.getParent()).removeView(toolbar);
+                ((android.view.ViewGroup) proprietaryControls[0]).removeAllViews();
+                ((android.view.ViewGroup) proprietaryControls[0]).addView(toolbar,
+                    new android.view.ViewGroup.LayoutParams(-1, -2));
+                ((android.view.ViewGroup) player[0]).addView(proprietaryControls[0],
+                    new android.widget.FrameLayout.LayoutParams(-1, -1));
                 ((android.view.ViewGroup) activity.getWindow().getDecorView()).addView(player[0],
                     new android.view.ViewGroup.LayoutParams(800, 400));
                 loader.loadClass("app.aimal.extension.crunchyroll.AspectRatioHelper")
                     .getMethod("addAspectRatioButton", View.class).invoke(null, player[0]);
             } catch (Throwable error) { failure[0] = error; }
         });
+        if (failure[0] != null) throw new RuntimeException(failure[0]);
         waitForIdleSync();
         runOnMainSync(() -> {
             try {
@@ -53,23 +71,31 @@ public final class CrunchyrollRunner extends Instrumentation {
                     .getIdentifier("exo_controller", "id", activity.getPackageName()));
                 check(unused != null, "media3 controller missing");
                 unused.setVisibility(View.GONE);
-                View controls = player[0].findViewById(2131428040);
+                View controls = proprietaryControls[0];
                 check(controls != null, "Proprietary controls missing");
                 View controller = (View) controls.getClass().getMethod("getPlayerToolbar").invoke(controls);
+                Class<?> helper = getTargetContext().getClassLoader().loadClass("app.aimal.extension.crunchyroll.AspectRatioHelper");
+                Method find = helper.getDeclaredMethod("findController", android.view.ViewGroup.class);
+                find.setAccessible(true);
+                check(find.invoke(null, player[0]) == controller, "Helper selected media3 instead of proprietary toolbar");
                 check(controller != null, "Actual controller ID missing");
                 View row = player[0].findViewById(0x7f0a9990);
                 check(row != null, "Actual player chips missing");
+                check(row.isAttachedToWindow(), "Test host detached before control verification");
+                android.graphics.Rect bounds = new android.graphics.Rect();
+                check(row.getGlobalVisibleRect(bounds) && !bounds.isEmpty(), "Chip row is outside the visible player");
+                check(row.getBottom() <= player[0].getHeight(), "Chip row falls below the video viewport");
                 controller.setVisibility(View.VISIBLE);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
                 check(row.getVisibility() == View.VISIBLE, "Actual controller failed to reveal chips");
                 controller.setAlpha(0f);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
-                check(row.getVisibility() == View.GONE, "Actual controller left ghost chips");
+                check(row.getVisibility() == View.GONE, "Actual controller left ghost chips; toolbar alpha=" + controller.getAlpha() + ", attached=" + row.isAttachedToWindow());
                 controller.setAlpha(1f);
                 player[0].getViewTreeObserver().dispatchOnPreDraw();
                 check(row.getVisibility() == View.VISIBLE, "Actual controller failed to restore chips");
-                ((android.view.ViewGroup) player[0].getParent()).removeView(player[0]);
-                activity.finish();
+                // End instrumentation with the component attached: the standalone
+                // timeline has no authenticated watch-screen presenter to detach.
             } catch (Throwable error) { failure[0] = error; }
         });
         if (failure[0] != null) throw new RuntimeException(failure[0]);

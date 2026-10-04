@@ -14,6 +14,7 @@ p = argparse.ArgumentParser()
 p.add_argument("--sdk", type=Path, required=True)
 p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged 3.117.0 APK")
 p.add_argument("--out", type=Path, required=True)
+p.add_argument("--reuse-target", action="store_true", help="Rebuild only instrumentation against the already installed APK signed by this output directory's test key")
 args = p.parse_args()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -21,12 +22,14 @@ tools = args.sdk / "build-tools/35.0.1"
 android = args.sdk / "platforms/android-35/android.jar"
 
 def run(*cmd, capture=False):
+    if cmd[0] == "adb": cmd = (os.environ.get("AIMAL_ADB", "adb"), *cmd[1:])
     return subprocess.run([str(x) for x in cmd], check=True, text=True, capture_output=capture)
 
 devices = run("adb", "devices", capture=True).stdout.splitlines()[1:]
 connected = [line.split()[0] for line in devices if line.strip() and line.split()[-1] == "device"]
 if len(connected) != 1 or not connected[0].startswith("emulator-"):
     raise RuntimeError("Connect exactly one isolated emulator; this runner does not install on physical devices")
+os.environ["ANDROID_SERIAL"] = connected[0]
 key = out / "vendor-test.jks"
 if not key.exists():
     run("keytool", "-genkeypair", "-keystore", key, "-storepass", "android", "-keypass", "android",
@@ -54,7 +57,7 @@ with zipfile.ZipFile(test, "a") as archive:
     for file in dex.glob("*.dex"): archive.write(file, file.name)
 target = out / "target.apk"
 shutil.copyfile(args.apk, target)
-for apk in (test, target):
+for apk in ((test,) if args.reuse_target else (test, target)):
     run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
     run("adb", "install", "--no-incremental", "-r", apk)
 result = run("adb", "shell", "am", "instrument", "-w", "app.aimal.verify/app.aimal.verify.CrunchyrollRunner", capture=True)
