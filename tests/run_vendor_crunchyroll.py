@@ -12,10 +12,10 @@ import zipfile
 
 p = argparse.ArgumentParser()
 p.add_argument("--sdk", type=Path, required=True)
-p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged 3.117.0 APK")
+p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged Crunchyroll APK")
 p.add_argument("--out", type=Path, required=True)
 p.add_argument("--reuse-target", action="store_true", help="Rebuild only instrumentation against the already installed APK signed by this output directory's test key")
-p.add_argument("--tv", action="store_true", help="Verify actual Android TV 3.74.0 media3 captions")
+p.add_argument("--tv", action="store_true", help="Verify actual TV stream routing and separate ASS playback")
 p.add_argument("--device", help="Explicit isolated emulator serial when other emulators are connected")
 args = p.parse_args()
 out = args.out.resolve()
@@ -59,6 +59,7 @@ run("java", "-cp", tools / "lib/d8.jar", "com.android.tools.r8.D8", "--min-api",
     "--output", dex, jar)
 with zipfile.ZipFile(test, "a") as archive:
     for file in dex.glob("*.dex"): archive.write(file, file.name)
+    if args.tv: archive.write(Path(__file__).parent / "vendor/sample.mp4", "assets/sample.mp4")
 target = out / "target.apk"
 shutil.copyfile(args.apk, target)
 for apk in ((test,) if args.reuse_target else (test, target)):

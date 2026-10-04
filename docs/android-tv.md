@@ -5,6 +5,22 @@ una vista previa y cambios inmediatos en los subtítulos de texto de media3.
 Es específico de `com.crunchyroll.crunchyroid` **3.74.0 (22364)** para TV.
 Los subtítulos de imagen conservan el dibujo original.
 
+La corrección posterior a 1.3.0 conecta también la selección del vídeo: cuando
+hay un vídeo limpio y una pista externa para el idioma elegido, usa esa pareja
+en lugar del vídeo con las letras incrustadas. La pista ASS se decodifica en el
+reproductor original y sus cues llegan al dibujo personalizado. Cambiar de
+idioma y desactivar los subtítulos actualiza esa selección. Si el contenido solo
+ofrece subtítulos incrustados, conserva el vídeo original.
+
+Al actualizar desde el primer APK de TV, instala la nueva versión encima y
+cierra y vuelve a abrir el episodio una vez. A partir de ahí, los cambios de
+estilo se aplican al instante, también con la reproducción pausada.
+
+La verificación usa las clases originales del APK 3.74.0, sus modelos de
+selección de vídeo y su ExoPlayer para reproducir un clip local con una pista
+ASS separada. Comprueba el dibujo, el cambio de estilo en pausa y la caducidad
+del subtítulo. No sustituye una prueba con sesión iniciada en una Mi Box.
+
 ## Usar el mando
 
 Durante un episodio, mantén **OK / Enter** al menos un segundo y suéltalo.
