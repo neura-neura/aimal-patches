@@ -103,24 +103,42 @@ Capturas de la aplicación de ensayo:
 [vertical](screenshots/subtitles-portrait.png) y
 [horizontal](screenshots/subtitles-landscape.png).
 
-Las aplicaciones de ensayo reproducen las formas esperadas de las clases.
-**No validan los fingerprints contra los APK comerciales ni una sesión de
-streaming real.** La detección de la vista y el reloj ASS de Crunchyroll es nueva:
-si una versión no coincide, el parche informa del error y detiene el parcheo.
-La compatibilidad de este fork con las cuatro aplicaciones debe confirmarse
-al probar los APK reales; las versiones anteriores de referencia vienen del
-proyecto original.
+En 1.2.1 se reprodujo el fallo de 1.2.0 con el APKM original de Crunchyroll
+3.117.0 (1175). Morphe Desktop aplicó los tres parches y generó el APK completo.
+Una prueba de instrumentación dentro de ese APK comprobó el JNI de libass,
+la carga de la pista, el reloj del controlador y el dibujo de `SubtitlesView`,
+el cambio de color con el subtítulo pausado, la expiración, la restauración del
+ASS nativo y la limpieza al destruir la pista. Se ejecutó en Android 37.
+
+`renderFrame(JJ)` es nativo: el parche conserva su nombre, firma e implementación
+JNI y captura sus argumentos en las llamadas de interfaz y de clase.
+La prueba de regresión usa también un método JNI real con ambas formas de llamada.
+
+No se comprobó una sesión de streaming con una cuenta ni el dispositivo Xiaomi.
+Los APK comerciales de las otras tres aplicaciones siguen pendientes de validar.
 
 ## Repetir las pruebas
 
 Usa un emulador aislado: los APK de ensayo usan los nombres de paquete de
 Crunchyroll y HBO Max. Necesitas JDK 21 o posterior, Android SDK con plataforma
-35 y herramientas 35.0.1, `adb`, el `.mpp` y Morphe Desktop 1.18.0.
+35, herramientas 35.0.1 y NDK 27.0.12077973, `adb`, el `.mpp` y Morphe Desktop 1.18.0.
 
 ```powershell
-python tests/run_fixtures.py --sdk C:/Users/tu_usuario/AppData/Local/Android/Sdk --bundle patches-1.2.0.mpp --morphe morphe-desktop-1.18.0-all.jar --out C:/Temp/aimal-fixtures --fonts
+python tests/run_fixtures.py --sdk C:/Users/tu_usuario/AppData/Local/Android/Sdk --bundle patches-1.2.1.mpp --morphe morphe-desktop-1.18.0-all.jar --out C:/Temp/aimal-fixtures --fonts
 ```
 
 Los resultados quedan en `fixture-result.txt`, `font-result.txt` y
 `patch-result.json` dentro de cada carpeta de ensayo. Los APK de ensayo no se
 distribuyen como versiones de las aplicaciones comerciales.
+
+Para comprobar el renderer comercial de Crunchyroll, usa tu propio APKM:
+
+```powershell
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches-1.2.1.mpp --exclusive -e "Subtitle styling" -e "Playback speed" -e "Aspect ratio control" Crunchyroll-3.117.0.apkm -o patched.apk --unsigned
+python tests/run_vendor_crunchyroll.py --sdk C:/Users/tu_usuario/AppData/Local/Android/Sdk --apk patched.apk --out C:/Temp/aimal-vendor
+```
+
+Esta prueba requiere exactamente un emulador aislado conectado. Instala el APK
+con una firma temporal bajo el paquete de Crunchyroll; elimina primero cualquier
+aplicación de ensayo con ese paquete. No inicia sesión ni reproduce contenido
+remoto. El APK comercial no se incluye en el repositorio ni en los releases.
