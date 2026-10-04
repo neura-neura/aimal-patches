@@ -97,6 +97,11 @@ los cambios sobre un subtítulo pausado, el efecto visual de las 15 propiedades,
 su persistencia, los cues superpuestos, los saltos de línea, los saltos hacia
 atrás, la expiración, la liberación de pistas y la vuelta al dibujo nativo.
 El panel se inspeccionó en vertical y horizontal.
+También pasaron la importación de GothamPro desde el CSS de Noir y su caché local.
+
+Capturas de la aplicación de ensayo:
+[vertical](screenshots/subtitles-portrait.png) y
+[horizontal](screenshots/subtitles-landscape.png).
 
 Las aplicaciones de ensayo reproducen las formas esperadas de las clases.
 **No validan los fingerprints contra los APK comerciales ni una sesión de
@@ -109,7 +114,7 @@ proyecto original.
 ## Repetir las pruebas
 
 Usa un emulador aislado: los APK de ensayo usan los nombres de paquete de
-Crunchyroll y HBO Max. Necesitas JDK 17 o posterior, Android SDK con plataforma
+Crunchyroll y HBO Max. Necesitas JDK 21 o posterior, Android SDK con plataforma
 35 y herramientas 35.0.1, `adb`, el `.mpp` y Morphe Desktop 1.18.0.
 
 ```powershell
