@@ -1,0 +1,29 @@
+name: Subtitle validation
+on:
+  workflow_dispatch:
+  push:
+    branches: ['codex/subtitle-customization']
+permissions:
+  contents: read
+  packages: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: burrunan/gradle-cache-action@v3
+      - name: Build bundle and patch list with bounded diagnostics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/build_bundle.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: subtitle-bundle
+          path: |
+            patches/build/libs/*.mpp
+            patches-list.json
+          if-no-files-found: error

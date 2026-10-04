@@ -126,82 +126,20 @@ public final class AspectRatioHelper {
             });
             row.addView(aspect);
 
-            // Subtitle controls. These only take effect on the next track load,
-            // because the script is rewritten on its way into libass.
-            final TextView size = chip(ctx, SubtitleStyler.sizeLabel());
-            size.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    SubtitleStyler.cycleSize();
-                    size.setText(SubtitleStyler.sizeLabel());
-                    toast(ctx);
-                    wake.run();
-                }
+            final TextView cc = chip(ctx, "SUBTÍTULOS");
+            cc.setMinHeight(dp(ctx, 48));
+            cc.setContentDescription("Abrir personalización de subtítulos");
+            cc.setOnClickListener(v -> {
+                app.aimal.extension.subtitles.SubtitlePanel.show(ctx);
+                wake.run();
             });
-
-            final TextView font = chip(ctx, SubtitleStyler.fontLabel());
-            font.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    SubtitleStyler.cycleFont();
-                    font.setText(SubtitleStyler.fontLabel());
-                    toast(ctx);
-                    wake.run();
-                }
-            });
-
-            final TextView border = chip(ctx, SubtitleStyler.borderLabel());
-            border.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    SubtitleStyler.cycleBorder();
-                    border.setText(SubtitleStyler.borderLabel());
-                    toast(ctx);
-                    wake.run();
-                }
-            });
-
-            size.setVisibility(View.GONE);
-            font.setVisibility(View.GONE);
-            border.setVisibility(View.GONE);
-
-            final TextView cc = chip(ctx, "CC");
-            cc.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean show = size.getVisibility() != View.VISIBLE;
-                    size.setVisibility(show ? View.VISIBLE : View.GONE);
-                    font.setVisibility(show ? View.VISIBLE : View.GONE);
-                    border.setVisibility(show ? View.VISIBLE : View.GONE);
-                    wake.run();
-                }
-            });
-
             row.addView(cc);
-            row.addView(size);
-            row.addView(font);
-            row.addView(border);
-
             parent.addView(row);
 
             // Re-assert the current choice (a fresh player defaults to FIT) and
             // start the idle timer.
             applyResizeMode(playerView, MODES[index]);
             handler.postDelayed(dim, IDLE_MS);
-        } catch (Throwable ignored) {
-        }
-    }
-
-    /**
-     * The rewritten script is only read when libass loads a track, so a change
-     * shows up on the next episode or after switching the subtitle language.
-     */
-    private static void toast(Context ctx) {
-        try {
-            String message = SubtitleStyler.hookSeen()
-                    ? "Applies on the next episode or subtitle change"
-                    : "Saved - no subtitle track has loaded yet";
-            Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show();
         } catch (Throwable ignored) {
         }
     }
@@ -254,3 +192,4 @@ public final class AspectRatioHelper {
                 TypedValue.COMPLEX_UNIT_DIP, dp, ctx.getResources().getDisplayMetrics());
     }
 }
+
