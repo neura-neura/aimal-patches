@@ -11,6 +11,11 @@ import java.util.Collections;
 
 /** Uses the actual 3.74.0 TV SubtitleView and Cue classes, without a login. */
 public final class CrunchyrollTvRunner extends Instrumentation {
+    public static final class LegacyProvider {
+        private final Object stream;
+        public LegacyProvider(Object value) { stream=value; }
+        public Object g() { return stream; }
+    }
     private Object mediaItem, player;
     private View playbackCaptions;
     private Class<?> playerType;
@@ -106,6 +111,19 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(off),"b"),"g")).isEmpty(),"Actual subtitles-off retained track");
         // Re-select for the end-to-end playback test; already-built item remains immutable.
         values[0]="https://example.test/burned.mpd";constructor.newInstance(values);
+        // The real Mi Box uses the legacy model: d() exposes captions, while f
+        // contains ASS subtitles with no public getter in this optimized APK.
+        Object legacy=allocate(loader.loadClass("com.crunchyroll.cms.models.SecureVideoStream"));
+        Constructor<?> legacyHard=loader.loadClass("com.crunchyroll.api.models.secureplay.HardSubtitle").getConstructor(String.class,String.class,String.class);
+        java.util.Map<String,Object> legacyHardSubs=new java.util.HashMap<>();
+        legacyHardSubs.put("none",legacyHard.newInstance("none",clean,"1080p"));
+        legacyHardSubs.put("es-ES",legacyHard.newInstance("es-ES","https://example.test/burned.mpd","1080p"));
+        Object legacySubtitle=allocate(loader.loadClass("com.crunchyroll.api.models.video.Subtitle"));
+        set(legacySubtitle,"url",caption);
+        set(legacy,"b",clean);set(legacy,"c",legacyHardSubs);set(legacy,"f",Collections.singletonMap("es-ES",legacySubtitle));set(legacy,"h",Collections.emptyMap());
+        set(cms,"s",Collections.emptyMap());set(cms,"n",Collections.singletonMap(source,new LegacyProvider(legacy)));
+        event=constructor.newInstance(values);
+        check(clean.equals(get(event,"a")) && caption.equals(get(event,"b")),"Legacy ASS map f was ignored in favor of empty closed captions d()");
     }
     private void verifyPlayback() throws Exception {
         Throwable[] error=new Throwable[1];

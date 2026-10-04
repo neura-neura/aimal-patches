@@ -13,6 +13,15 @@ public final class PlayerActivity extends fixture.TestActivity {
         public java.util.Map<String,Entry> i(){return java.util.Collections.singletonMap("es-ES",new Entry());}
         public java.util.Map<String,Entry> e(){return java.util.Collections.emptyMap();}
     }
+    public static final class LegacyEntry { public String getUrl(){return "https://example.test/es.ass";} }
+    public static final class LegacyHard { private final String url; LegacyHard(String value){url=value;} public String getUrl(){return url;} }
+    public static final class LegacyStream {
+        public java.util.Map<String,LegacyEntry> f=java.util.Collections.singletonMap("es-ES",new LegacyEntry());
+        public java.util.Map<String,LegacyEntry> d(){return java.util.Collections.emptyMap();}
+        public java.util.Map<String,LegacyHard> e(){java.util.Map<String,LegacyHard> m=new java.util.HashMap<>();m.put("none",new LegacyHard("https://example.test/clean.mpd"));m.put("es-ES",new LegacyHard("https://example.test/burned.mpd"));return m;}
+        public String j(){return "https://example.test/clean.mpd";}
+    }
+    public static final class LegacyProvider {public LegacyStream g(){return new LegacyStream();}}
     private void verifyRouting() {
         com.crunchyroll.cms.component.CMSComponent cms=new com.crunchyroll.cms.component.CMSComponent();
         cms.s.put("CURRENT",new Model());
@@ -24,6 +33,9 @@ public final class PlayerActivity extends fixture.TestActivity {
         event=new com.crunchyroll.player.eventbus.events.Topic.CMSEvent.VideoUrlReady("https://example.test/clean.mpd","",null,null,null,null,null,null,null,null,null,null,"CURRENT",null,null,null,null,null);
         builder=new androidx.media3.common.MediaItem.Builder();builder.b=android.net.Uri.parse(event.a);
         if (!builder.a().subtitles.isEmpty()) throw new AssertionError("Subtitles-off retained previous track");
+        cms.s.clear();cms.n.put("CURRENT",new LegacyProvider());
+        event=new com.crunchyroll.player.eventbus.events.Topic.CMSEvent.VideoUrlReady("https://example.test/burned.mpd","",null,null,null,null,null,null,null,null,null,null,"CURRENT",null,null,null,null,null);
+        if (!event.a.equals("https://example.test/clean.mpd") || !event.b.endsWith("es.ass")) throw new AssertionError("Legacy ASS with empty closed captions was ignored");
     }
     private int nativeKeys;
     @Override public boolean dispatchKeyEvent(KeyEvent event) {
