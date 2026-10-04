@@ -1,0 +1,112 @@
+package app.aimal.extension.crunchyroll;
+
+import android.net.Uri;
+import android.util.Log;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.*;
+import java.util.*;
+
+/** 3.74.0 TV stream routing: clean video plus an independently decoded text track. */
+public final class TvPlaybackSubtitles {
+    private static WeakReference<Object> cms = new WeakReference<>(null);
+    private static final Map<String, Track> tracks = new LinkedHashMap<>();
+    private static final class Track {
+        final String url, language;
+        Track(String url, String language) { this.url = url; this.language = language; }
+    }
+    private TvPlaybackSubtitles() { }
+    public static void register(Object component) { cms = new WeakReference<>(component); }
+
+    public static void onVideo(Object event) {
+        try {
+            Object component = cms.get();
+            if (component == null) return;
+            Object source = field(event, "m");
+            String video = string(field(event, "a"));
+            String caption = string(field(event, "b"));
+            Object model = map(field(component, "s")).get(source);
+            String clean, language;
+            if (model != null) {
+                Object manifest = call(model, "g");
+                Map<?, ?> hard = map(call(manifest, "d"));
+                Map<?, ?> subtitles = new LinkedHashMap<>(map(call(model, "i")));
+                // Closed captions take the same precedence as CMSComponent.c0.
+                ((Map)subtitles).putAll(map(call(model, "e")));
+                language = language(component, hard, subtitles, video, caption, "a");
+                Object plain = hard.get("none");
+                clean = plain == null ? string(call(manifest, "h")) : string(call(plain, "a"));
+                if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "a"));
+            } else {
+                Object provider = map(field(component, "n")).get(source);
+                if (provider == null) return;
+                Object stream = call(provider, "g");
+                if (stream == null) return;
+                Map<?, ?> hard = map(call(stream, "e")), subtitles = map(call(stream, "d"));
+                language = language(component, hard, subtitles, video, caption, "getUrl");
+                Object plain = hard.get("none");
+                clean = plain == null ? string(call(stream, "j")) : string(call(plain, "getUrl"));
+                if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "getUrl"));
+            }
+            // Keep unavailable languages and genuinely burned-only content on the native path.
+            if (language.equals("none")) {
+                synchronized (tracks) { tracks.remove(clean); }
+                return;
+            }
+            if (clean.isEmpty() || caption.isEmpty()) return;
+            set(event, "a", clean);
+            set(event, "b", caption);
+            synchronized (tracks) {
+                tracks.put(clean, new Track(caption, language));
+                while (tracks.size() > 32) tracks.remove(tracks.keySet().iterator().next());
+            }
+        } catch (Throwable error) { Log.e("AimalSubtitles", "Cannot route TV text track", error); }
+    }
+
+    private static String language(Object component, Map<?, ?> hard, Map<?, ?> subtitles,
+            String video, String caption, String getter) throws Exception {
+        for (Map.Entry<?, ?> entry : subtitles.entrySet()) {
+            if (!caption.isEmpty() && caption.equals(string(call(entry.getValue(), getter)))) return string(entry.getKey());
+        }
+        // With no external URL, the selected burned URL identifies the requested language.
+        for (Map.Entry<?, ?> entry : hard.entrySet()) {
+            if (video.equals(string(call(entry.getValue(), getter)))) return string(entry.getKey());
+        }
+        String selected = string(field(component, "o"));
+        if (selected.equals("none") || subtitles.containsKey(selected)) return selected;
+        Object locale = field(component, "d");
+        String preferred = locale instanceof Locale ? ((Locale)locale).toLanguageTag() : "";
+        return subtitles.containsKey(preferred) ? preferred : "";
+    }
+
+    /** Called before MediaItem.Builder builds, preserving DRM, audio and all other fields. */
+    public static void onBuild(Object builder) {
+        try {
+            Object uri = field(builder, "b");
+            Track track;
+            synchronized (tracks) { track = tracks.get(string(uri)); }
+            if (track == null) return;
+            ClassLoader loader = builder.getClass().getClassLoader();
+            Class<?> type = loader.loadClass("androidx.media3.common.MediaItem$SubtitleConfiguration$Builder");
+            Object subtitle = type.getConstructor(Uri.class).newInstance(Uri.parse(track.url));
+            String path = Uri.parse(track.url).getPath();
+            String mime = path != null && path.toLowerCase(Locale.ROOT).endsWith(".vtt") ? "text/vtt"
+                : path != null && path.toLowerCase(Locale.ROOT).endsWith(".srt") ? "application/x-subrip" : "text/x-ssa";
+            type.getMethod("n", String.class).invoke(subtitle, mime);
+            type.getMethod("m", String.class).invoke(subtitle, track.language);
+            type.getMethod("p", int.class).invoke(subtitle, 1); // DEFAULT selection
+            Object configuration = type.getMethod("i").invoke(subtitle);
+            builder.getClass().getMethod("k", List.class).invoke(builder, Collections.singletonList(configuration));
+        } catch (Throwable error) { Log.e("AimalSubtitles", "Cannot attach TV text track", error); }
+    }
+    private static Object call(Object object, String name) throws Exception {
+        return object == null ? null : object.getClass().getMethod(name).invoke(object);
+    }
+    private static Map<?, ?> map(Object object) { return object instanceof Map ? (Map<?, ?>)object : Collections.emptyMap(); }
+    private static String string(Object object) { return object == null ? "" : object.toString(); }
+    private static Object field(Object object, String name) throws Exception {
+        Field field = object.getClass().getDeclaredField(name); field.setAccessible(true); return field.get(object);
+    }
+    private static void set(Object object, String name, Object value) throws Exception {
+        Field field = object.getClass().getDeclaredField(name); field.setAccessible(true); field.set(object, value);
+    }
+}
