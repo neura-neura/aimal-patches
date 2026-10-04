@@ -16,6 +16,7 @@ p.add_argument("--apk", type=Path, required=True, help="Patched unsigned, merged
 p.add_argument("--out", type=Path, required=True)
 p.add_argument("--reuse-target", action="store_true", help="Rebuild only instrumentation against the already installed APK signed by this output directory's test key")
 p.add_argument("--tv", action="store_true", help="Verify actual Android TV 3.74.0 media3 captions")
+p.add_argument("--device", help="Explicit isolated emulator serial when other emulators are connected")
 args = p.parse_args()
 out = args.out.resolve()
 out.mkdir(parents=True, exist_ok=True)
@@ -28,9 +29,10 @@ def run(*cmd, capture=False):
 
 devices = run("adb", "devices", capture=True).stdout.splitlines()[1:]
 connected = [line.split()[0] for line in devices if line.strip() and line.split()[-1] == "device"]
-if len(connected) != 1 or not connected[0].startswith("emulator-"):
+selected = args.device if args.device else (connected[0] if len(connected) == 1 else None)
+if selected not in connected or not selected.startswith("emulator-"):
     raise RuntimeError("Connect exactly one isolated emulator; this runner does not install on physical devices")
-os.environ["ANDROID_SERIAL"] = connected[0]
+os.environ["ANDROID_SERIAL"] = selected
 key = out / "vendor-test.jks"
 if not key.exists():
     run("keytool", "-genkeypair", "-keystore", key, "-storepass", "android", "-keypass", "android",

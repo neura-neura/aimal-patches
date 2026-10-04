@@ -11,6 +11,12 @@ import java.util.Collections;
 
 /** Uses the actual 3.74.0 TV SubtitleView and Cue classes, without a login. */
 public final class CrunchyrollTvRunner extends Instrumentation {
+    @Override public android.app.Application newApplication(ClassLoader loader, String name, Context context)
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        // Caption components need the original APK resources/classes, not network
+        // startup, analytics or an authenticated application dependency graph.
+        return super.newApplication(loader, "android.app.Application", context);
+    }
     @Override public void onCreate(Bundle args) { super.onCreate(args); start(); }
     @Override public void onStart() {
         Bundle result = new Bundle();
