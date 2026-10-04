@@ -40,6 +40,7 @@ jobs:
         with:
           name: subtitle-bundle
           path: bundle
+      - uses: android-actions/setup-android@v3
       - name: Install fixture build tools and Morphe Desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

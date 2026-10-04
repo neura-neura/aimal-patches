@@ -13,7 +13,7 @@ p.add_argument("--out", type=Path, required=True)
 p.add_argument("--fonts", action="store_true")
 args = p.parse_args()
 if args.bundle.is_dir():
-    bundles = list(args.bundle.glob("*.mpp"))
+    bundles = [file for file in args.bundle.glob("*.mpp") if not any(part in file.name for part in ("-sources", "-javadoc"))]
     if len(bundles) != 1: raise ValueError("Expected exactly one MPP in the bundle directory")
     args.bundle = bundles[0]
 args.out.mkdir(parents=True, exist_ok=True)
