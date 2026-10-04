@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "patches": [
     {
       "name": "Aspect ratio control",
@@ -70,9 +70,11 @@
     },
     {
       "name": "Playback speed and aspect ratio",
-      "description": "Adds a floating panel to change playback speed and stretch, crop or zoom the picture.",
+      "description": "Adds playback controls and a full subtitle editor with live preview and instant styling.",
       "default": true,
-      "dependencies": [],
+      "dependencies": [
+        "BytecodePatch"
+      ],
       "compatiblePackages": [
         {
           "packageName": "com.wbd.stream",
@@ -184,9 +186,11 @@
     },
     {
       "name": "Subtitle styling",
-      "description": "Adds subtitle size, font and outline controls to the player.",
+      "description": "Adds all Noir subtitle style options, a live example and immediate updates during playback.",
       "default": true,
-      "dependencies": [],
+      "dependencies": [
+        "BytecodePatch"
+      ],
       "compatiblePackages": [
         {
           "packageName": "com.crunchyroll.crunchyroid",

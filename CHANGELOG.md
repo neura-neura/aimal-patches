@@ -1,3 +1,17 @@
+# [1.2.0](https://github.com/neura-neura/aimal-patches/compare/v1.1.0...v1.2.0) (2026-10-04)
+
+
+### Bug Fixes
+
+* follow native subtitle handles across preloaded tracks ([396a3ad](https://github.com/neura-neura/aimal-patches/commit/396a3ad766cfbe7103ea6caa1bc531a1365f210f))
+* validate injected subtitle hooks and improve font selection ([96c517a](https://github.com/neura-neura/aimal-patches/commit/96c517aa350e4d7f7d7d02446cb0f70a6d7ef664))
+* verify Android CSS parsing and document subtitle installation ([9c23288](https://github.com/neura-neura/aimal-patches/commit/9c232881cfc2b0a17eda936dab8a0179d94ee624))
+
+
+### Features
+
+* add live Noir subtitle customization and preview ([683fd4d](https://github.com/neura-neura/aimal-patches/commit/683fd4d5b3bce9bb04ee2c4e67e47aac2a522d2c))
+
 # [1.1.0](https://github.com/hashtagbasit/aimal-patches/compare/v1.0.2...v1.1.0) (2026-09-06)
 
 
