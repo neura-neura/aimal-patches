@@ -92,6 +92,15 @@ public final class SubtitlePanel {
         status = label("Los cambios se guardan y se aplican al instante.", 12);
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         shell.addView(status);
+        if (tv) {
+            Button diagnostic = button("Diagnóstico de reproducción", () -> {
+                new android.app.AlertDialog.Builder(context).setTitle("Diagnóstico de subtítulos")
+                    .setMessage(app.aimal.extension.crunchyroll.TvPlaybackSubtitles.diagnostics())
+                    .setPositiveButton("Cerrar", null).show();
+            });
+            shell.addView(diagnostic);
+            focusOutline(diagnostic);
+        }
         ScrollView scroll = new ScrollView(context);
         scroll.setFillViewport(true);
         content = column();

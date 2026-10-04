@@ -35,6 +35,7 @@ public final class Media3Captions {
                 text.append(value);
             }
             state.text = text.toString();
+            app.aimal.extension.crunchyroll.TvPlaybackSubtitles.onCaption(state.text);
             view.setWillNotDraw(false);
             view.invalidate();
         } catch (Throwable error) { Log.e("AimalSubtitles", "Cannot read media3 cues", error); }
@@ -45,8 +46,9 @@ public final class Media3Captions {
         try {
             State state = states.get(view);
             SubtitleStyle style = SubtitleSettings.style(view.getContext());
-            if (state == null || !style.enabled) return false;
-            for (Object cue : state.cues) if (text(cue) == null) return false;
+            if (state == null || !style.enabled) { app.aimal.extension.crunchyroll.TvPlaybackSubtitles.onDrawing(false); return false; }
+            for (Object cue : state.cues) if (text(cue) == null) { app.aimal.extension.crunchyroll.TvPlaybackSubtitles.onDrawing(false); return false; }
+            app.aimal.extension.crunchyroll.TvPlaybackSubtitles.onDrawing(true);
             state.painter.draw(canvas, view.getWidth(), view.getHeight(), state.text, style, SubtitleSettings.revision());
             return true;
         } catch (Throwable error) { Log.e("AimalSubtitles", "Caption draw failed", error); return false; }
