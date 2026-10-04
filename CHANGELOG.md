@@ -1,3 +1,12 @@
+## [1.2.2](https://github.com/neura-neura/aimal-patches/compare/v1.2.1...v1.2.2) (2026-10-04)
+
+
+### Bug Fixes
+
+* apply CSS weight metadata to imported Gotham faces ([7b23bd7](https://github.com/neura-neura/aimal-patches/commit/7b23bd777e2b27591c25d8b69cdc0acf60aaba06))
+* import actual Gotham weights and hide chips with native controls ([db19857](https://github.com/neura-neura/aimal-patches/commit/db19857155a1a2bef1e3c2723c2a6e091d31950e))
+* serialize automatic and manual font imports ([ba729c6](https://github.com/neura-neura/aimal-patches/commit/ba729c68435656d47fdac755596dae380a5921c7))
+
 ## [1.2.1](https://github.com/neura-neura/aimal-patches/compare/v1.2.0...v1.2.1) (2026-10-04)
 
 
