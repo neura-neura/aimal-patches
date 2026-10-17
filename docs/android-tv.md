@@ -71,7 +71,7 @@ For an already authorized ADB connection:
 adb -s YOUR_TV_SERIAL install -r "Crunchyroll-TV-patched.apk"
 ```
 
-This fork's [1.3.4 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.3.4)
+This fork's [1.4.0 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.4.0)
 also provides a signed, ready-to-install TV APK. Choose the file starting with
 `Crunchyroll-TV`; the `Crunchyroll-Android` APK is for phones and tablets.
 The `.mpp` bundle remains available for patching your own APK. Private signing

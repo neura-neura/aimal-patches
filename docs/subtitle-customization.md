@@ -71,9 +71,9 @@ uncached CSS font requires Internet access.
 ## Install with Morphe Manager
 
 For ready-to-install APKs without Morphe, see this fork's
-[1.3.4 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.3.4).
-Choose `Crunchyroll-Android-3.117.0-Aimal-1.3.4-English.apk` for phones/tablets,
-or the separate `Crunchyroll-TV-3.74.0-Aimal-1.3.4-English.apk` for Android TV.
+[1.4.0 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.4.0).
+Choose `Crunchyroll-Android-3.117.0-Aimal-1.4.0-English.apk` for phones/tablets,
+or the separate `Crunchyroll-TV-3.74.0-Aimal-1.4.0-English.apk` for Android TV.
 These files use a different signature from the official app and may differ
 from your Morphe signing key; see the release notes before installing.
 
@@ -139,6 +139,9 @@ expiration, track disposal, and native fallback. Font tests cover real Gotham
 weights and migration of older caches. Controller tests check complete hiding,
 restoration, and D-pad activation. TV tests cover modern/legacy routing,
 subtitles-off, short OK delivery, long OK/Menu shortcuts, and initial focus.
+Saved-style checks cover detached snapshots, included-style protection,
+create/rename/update/delete, bounded storage values, older settings, and
+damaged storage. TV editor checks apply Anime Classic and retain remote focus.
 
 The panel is checked in portrait and landscape:
 [portrait](screenshots/subtitles-portrait.png) and
