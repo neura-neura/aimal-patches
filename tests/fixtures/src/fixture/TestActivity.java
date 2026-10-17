@@ -243,7 +243,7 @@ public class TestActivity extends Activity {
         SubtitlePresets.rename(this, id, "Renamed");
         saved = SubtitlePresets.all(this).get(2);
         check(saved.name.equals("Renamed") && saved.style.outlineColor == Color.GREEN, "Update or rename failed");
-        SubtitleSettings.apply(this, included.get(0).style);
+        SubtitleSettings.apply(this, SubtitlePresets.all(this).get(0).style);
         check(SubtitleSettings.revision() > revision, "Applying a preset did not invalidate paused captions");
         SubtitlePresets.delete(this, id);
         check(SubtitlePresets.all(this).size() == 2 && SubtitleSettings.style(this).fontSize == 54, "Delete changed the current style");
