@@ -40,6 +40,15 @@ val crunchyrollTvSubtitlesPatch = bytecodePatch(
             .map { it.index }.reversed().forEach { index ->
                 eventConstructor.addInstruction(index, "invoke-static/range { p0 .. p0 }, $routing->onVideo(Ljava/lang/Object;)V")
             }
+        // Both automatic and manual episode transitions consume prebuilt queue items.
+        val queueEvent = mutableClassDefByOrNull {
+            it.type == "Lcom/crunchyroll/player/eventbus/events/Topic\$QueueEvent\$PrepareQueueStream;"
+        } ?: throw PatchException("Cannot find TV queue stream event.")
+        val queueConstructor = queueEvent.methods.single { it.name == "<init>" && it.parameterTypes.size == 10 }
+        queueConstructor.implementation!!.instructions.withIndex().filter { it.value.opcode == Opcode.RETURN_VOID }
+            .map { it.index }.reversed().forEach { index ->
+                queueConstructor.addInstruction(index, "invoke-static/range { p0 .. p0 }, $routing->onQueue(Ljava/lang/Object;)V")
+            }
         val builder = mutableClassDefByOrNull { it.type == "Landroidx/media3/common/MediaItem\$Builder;" }
             ?: throw PatchException("Cannot find TV MediaItem builder.")
         val build = builder.methods.single { it.parameterTypes.isEmpty() && it.returnType == "Landroidx/media3/common/MediaItem;" }
