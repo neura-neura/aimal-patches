@@ -474,7 +474,13 @@ public final class SubtitlePanel {
         EditText v = new EditText(context); v.setId(View.generateViewId()); v.setSingleLine(true);
         v.setTextColor(Color.WHITE); v.setHintTextColor(0xFFB0B8C6); v.setText(value); v.setMinHeight(dp(48)); return v;
     }
-    private Button button(String title, Runnable action) { Button b = new Button(context); b.setText(title); b.setAllCaps(false); b.setMinHeight(dp(48)); b.setOnClickListener(v -> action.run()); return b; }
+    private Button button(String title, Runnable action) {
+        Button b = new Button(context);
+        b.setText(title); b.setAllCaps(false); b.setMinHeight(dp(48));
+        if (tv) b.setFocusableInTouchMode(true);
+        b.setOnClickListener(v -> action.run());
+        return b;
+    }
     private LinearLayout column() { LinearLayout v = new LinearLayout(context); v.setOrientation(LinearLayout.VERTICAL); return v; }
     private int dp(int value) { return Math.round(value * context.getResources().getDisplayMetrics().density); }
     private static String format(float value, float step) { return step >= 1 ? String.format(Locale.US, "%.0f", value) : String.format(Locale.US, step >= .1f ? "%.1f" : "%.2f", value); }
