@@ -17,6 +17,10 @@ working while the episode still showed burned-in subtitles.
 After updating an older patched APK, close and reopen the episode once.
 Subsequent style changes apply immediately, including while playback is paused.
 
+Custom styling also persists when an episode advances automatically or when
+you press **Next episode**. The patch prepares external subtitles for queued
+episodes before playback starts, so reopening the episode is unnecessary.
+
 ## Remote controls
 
 During an episode, hold **OK / Enter** for at least one second, then release it.
@@ -75,10 +79,14 @@ private signing key.
 Instrumentation uses the original 3.74.0 classes and ExoPlayer to verify modern
 and legacy routing, ASS tracks with an empty closed-caption map, separate ASS
 playback, paused style updates, cue expiration, and native fallback.
+Queue regression tests cover NEXT/PREVIOUS events before their provider is
+stored, external-track attachment, and isolation between episode IDs.
 
 The legacy fix was also tested with authenticated playback on a Xiaomi Mi Box 4
 running Android 9. The player received the Spanish ASS track, and the user
 confirmed that style changes appeared in the episode.
+Manual next-episode and automatic end-of-episode transitions were subsequently
+confirmed on the same device, with ASS attachment recorded before the switch.
 
 To repeat the original-player test on an isolated emulator using your own APK:
 
