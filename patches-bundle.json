@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-17T22:57:12",
-  "description": "## [1.3.4](https://github.com/neura-neura/aimal-patches/compare/v1.3.3...v1.3.4) (2026-10-17)\n\n\n### Bug Fixes\n\n* preserve TV subtitle styling for queued episode transitions ([308a610](https://github.com/neura-neura/aimal-patches/commit/308a6106831044cbf3bf37bc2c923b63e808a579))",
-  "download_url": "https://github.com/neura-neura/aimal-patches/releases/download/v1.3.4/patches-1.3.4.mpp",
+  "created_at": "2026-10-17T23:34:07",
+  "description": "# [1.4.0](https://github.com/neura-neura/aimal-patches/compare/v1.3.4...v1.4.0) (2026-10-17)\n\n\n### Bug Fixes\n\n* allow font cache migration after completing an earlier import ([f4e4437](https://github.com/neura-neura/aimal-patches/commit/f4e4437aab0787aee5d6f61d3566484ed5620f13))\n* retain TV preset focus when activated from touch mode ([2266de4](https://github.com/neura-neura/aimal-patches/commit/2266de4ddb07aeaab0ec7f41c7a43892c8d291b8))\n\n\n### Features\n\n* add saved subtitle styles and Anime Classic outline preset ([c6567dc](https://github.com/neura-neura/aimal-patches/commit/c6567dc6a194788aad086d65c23b111035f77860))",
+  "download_url": "https://github.com/neura-neura/aimal-patches/releases/download/v1.4.0/patches-1.4.0.mpp",
   "signature_download_url": "",
-  "version": "1.3.4"
+  "version": "1.4.0"
 }

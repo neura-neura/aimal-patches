@@ -1,3 +1,16 @@
+# [1.4.0](https://github.com/neura-neura/aimal-patches/compare/v1.3.4...v1.4.0) (2026-10-17)
+
+
+### Bug Fixes
+
+* allow font cache migration after completing an earlier import ([f4e4437](https://github.com/neura-neura/aimal-patches/commit/f4e4437aab0787aee5d6f61d3566484ed5620f13))
+* retain TV preset focus when activated from touch mode ([2266de4](https://github.com/neura-neura/aimal-patches/commit/2266de4ddb07aeaab0ec7f41c7a43892c8d291b8))
+
+
+### Features
+
+* add saved subtitle styles and Anime Classic outline preset ([c6567dc](https://github.com/neura-neura/aimal-patches/commit/c6567dc6a194788aad086d65c23b111035f77860))
+
 ## [1.3.4](https://github.com/neura-neura/aimal-patches/compare/v1.3.3...v1.3.4) (2026-10-17)
 
 
