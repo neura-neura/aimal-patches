@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/neura-neura/aimal-patches/compare/v1.3.3...v1.3.4) (2026-10-17)
+
+
+### Bug Fixes
+
+* preserve TV subtitle styling for queued episode transitions ([308a610](https://github.com/neura-neura/aimal-patches/commit/308a6106831044cbf3bf37bc2c923b63e808a579))
+
 ## [1.3.3](https://github.com/neura-neura/aimal-patches/compare/v1.3.2...v1.3.3) (2026-10-04)
 
 
