@@ -36,13 +36,21 @@ public final class TvPlaybackSubtitles {
     public static void onDrawing(boolean custom) { drawing = custom; }
 
     public static void onVideo(Object event) {
+        route(event, false);
+    }
+
+    public static void onQueue(Object event) {
+        route(event, true);
+    }
+
+    private static void route(Object event, boolean queue) {
         try {
             events++;
             Object component = cms.get();
             if (component == null) { status("CMS unavailable"); return; }
-            Object source = field(event, "m");
-            String video = string(field(event, "a"));
-            String caption = string(field(event, "b"));
+            Object source = field(event, queue ? "g" : "m");
+            String video = string(field(event, queue ? "b" : "a"));
+            String caption = string(field(event, queue ? "c" : "b"));
             Object model = map(field(component, "s")).get(source);
             String clean, language;
             if (model != null) {
@@ -58,6 +66,16 @@ public final class TvPlaybackSubtitles {
                 if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "a"));
             } else {
                 Object provider = map(field(component, "n")).get(source);
+                // Z() publishes PrepareQueueStream before storing its provider in n.
+                // t holds the provider being prepared. Match its content ID so a
+                // stale NEXT/PREVIOUS entry cannot supply another episode's track.
+                if (queue) {
+                    Object pending = field(component, "t");
+                    Object pendingStream = pending == null ? null : call(pending, "g");
+                    if (pendingStream != null && string(field(event, "a")).equals(string(call(pendingStream, "f")))) {
+                        provider = pending;
+                    }
+                }
                 if (provider == null) { status("No model for source=" + source + " · modern=" + map(field(component,"s")).size() + " · legacy=" + map(field(component,"n")).size()); return; }
                 Object stream = call(provider, "g");
                 if (stream == null) { status("Provider has no stream · source=" + source); return; }
@@ -80,9 +98,9 @@ public final class TvPlaybackSubtitles {
                 return;
             }
             if (clean.isEmpty() || caption.isEmpty()) { status(routingStatus + " · clean=" + !clean.isEmpty() + " · text=" + !caption.isEmpty() + " · language=" + language); return; }
-            set(event, "a", clean);
-            set(event, "b", caption);
-            status("Clean video + external track selected · language=" + language);
+            set(event, queue ? "b" : "a", clean);
+            set(event, queue ? "c" : "b", caption);
+            status("Clean video + external track selected · source=" + source + " · queue=" + queue + " · language=" + language);
             synchronized (tracks) {
                 tracks.put(clean, new Track(caption, language));
                 while (tracks.size() > 32) tracks.remove(tracks.keySet().iterator().next());

@@ -16,6 +16,7 @@ public final class PlayerActivity extends fixture.TestActivity {
     public static final class LegacyEntry { public String getUrl(){return "https://example.test/es.ass";} }
     public static final class LegacyHard { private final String url; LegacyHard(String value){url=value;} public String getUrl(){return url;} }
     public static final class LegacyStream {
+        public String f(){return "next-episode";}
         public java.util.Map<String,LegacyEntry> f=java.util.Collections.singletonMap("es-ES",new LegacyEntry());
         public java.util.Map<String,LegacyEntry> d(){return java.util.Collections.emptyMap();}
         public java.util.Map<String,LegacyHard> e(){java.util.Map<String,LegacyHard> m=new java.util.HashMap<>();m.put("none",new LegacyHard("https://example.test/clean.mpd"));m.put("es-ES",new LegacyHard("https://example.test/burned.mpd"));return m;}
@@ -36,6 +37,19 @@ public final class PlayerActivity extends fixture.TestActivity {
         cms.s.clear();cms.n.put("CURRENT",new LegacyProvider());
         event=new com.crunchyroll.player.eventbus.events.Topic.CMSEvent.VideoUrlReady("https://example.test/burned.mpd","",null,null,null,null,null,null,null,null,null,null,"CURRENT",null,null,null,null,null);
         if (!event.a.equals("https://example.test/clean.mpd") || !event.b.endsWith("es.ass")) throw new AssertionError("Legacy ASS with empty closed captions was ignored");
+        // Queue publication precedes n.put(NEXT, provider). This is the real TV
+        // autoplay/manual-next path, not a second VideoUrlReady notification.
+        cms.n.clear();cms.t=new LegacyProvider();
+        for (String source : new String[]{"NEXT","PREVIOUS"}) {
+            com.crunchyroll.player.eventbus.events.Topic.QueueEvent.PrepareQueueStream queued=
+                new com.crunchyroll.player.eventbus.events.Topic.QueueEvent.PrepareQueueStream("next-episode","https://example.test/burned.mpd","",null,null,null,source,null,null,null);
+            if (!queued.b.equals("https://example.test/clean.mpd") || !queued.c.endsWith("es.ass")) throw new AssertionError("Queued episode ignored pending provider");
+            builder=new androidx.media3.common.MediaItem.Builder();builder.b=android.net.Uri.parse(queued.b);
+            if (builder.a().subtitles.size()!=1) throw new AssertionError("Queued MediaItem lost external ASS");
+        }
+        com.crunchyroll.player.eventbus.events.Topic.QueueEvent.PrepareQueueStream unrelated=
+            new com.crunchyroll.player.eventbus.events.Topic.QueueEvent.PrepareQueueStream("different-episode","https://example.test/other.mpd","",null,null,null,"NEXT",null,null,null);
+        if (!unrelated.b.endsWith("other.mpd") || !unrelated.c.isEmpty()) throw new AssertionError("Pending provider leaked across episode IDs");
     }
     private int nativeKeys;
     @Override public boolean dispatchKeyEvent(KeyEvent event) {

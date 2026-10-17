@@ -29,7 +29,7 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         }
         runOnMainSync(() -> { try { if (player != null) playerType.getMethod("release").invoke(player); } catch (Exception ignored) { } });
         result.putString("stream", failure[0] == null
-            ? "PASS: TV original stream models, clean video selection, separate ASS playback, paused hot reload, cue expiration, native fallback and injected remote hook\n"
+            ? "PASS: TV original stream models, queued episode routing, clean video selection, separate ASS playback, paused hot reload, cue expiration, native fallback and injected remote hook\n"
             : "FAIL: " + android.util.Log.getStackTraceString(failure[0]));
         finish(failure[0] == null ? -1 : 1, result);
     }
@@ -124,6 +124,27 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         set(cms,"s",Collections.emptyMap());set(cms,"n",Collections.singletonMap(source,new LegacyProvider(legacy)));
         event=constructor.newInstance(values);
         check(clean.equals(get(event,"a")) && caption.equals(get(event,"b")),"Legacy ASS map f was ignored in favor of empty closed captions d()");
+        // The actual legacy CMS publishes queue events before n.put(source,...).
+        // Keep CURRENT populated and NEXT absent, with the new provider only in t.
+        set(legacy,"a","queued-episode");
+        set(cms,"t",new LegacyProvider(legacy));
+        Class<?> queueClass=loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$QueueEvent$PrepareQueueStream");
+        Constructor<?> queueConstructor=null;
+        for(Constructor<?> c:queueClass.getConstructors()) if(c.getParameterCount()==10) queueConstructor=c;
+        check(queueConstructor!=null,"Original queue constructor missing");
+        Object[] queueValues=new Object[10];Class<?>[] queueTypes=queueConstructor.getParameterTypes();
+        for(int i=0;i<10;i++) queueValues[i]=queueTypes[i]==String.class?"":queueTypes[i].isEnum()?queueTypes[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(queueTypes[i])?Collections.emptyList():null;
+        queueValues[0]="queued-episode";queueValues[1]="https://example.test/burned.mpd";queueValues[2]="";
+        for(String direction:new String[]{"NEXT","PREVIOUS"}) {
+            queueValues[6]=Enum.valueOf((Class)source.getClass(),direction);
+            Object queued=queueConstructor.newInstance(queueValues);
+            check(clean.equals(get(queued,"b")) && caption.equals(get(queued,"c")),"Original queued episode did not use pending ASS provider: "+direction);
+            Object queuedBuilder=builderClass.getConstructor().newInstance();builderClass.getMethod("n",String.class).invoke(queuedBuilder,get(queued,"b"));
+            check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(queuedBuilder),"b"),"g")).size()==1,"Original queued MediaItem omitted ASS: "+direction);
+        }
+        queueValues[0]="unrelated-episode";queueValues[1]="https://example.test/unrelated.mpd";
+        Object unrelated=queueConstructor.newInstance(queueValues);
+        check(queueValues[1].equals(get(unrelated,"b")) && "".equals(get(unrelated,"c")),"Pending provider leaked into unrelated episode");
     }
     private void verifyPlayback() throws Exception {
         Throwable[] error=new Throwable[1];
