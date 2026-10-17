@@ -42,7 +42,11 @@ public final class SubtitleSettings {
         });
     }
     public static void reset(Context context) {
-        synchronized (SubtitleSettings.class) { style = new SubtitleStyle(); }
+        apply(context, new SubtitleStyle());
+    }
+    public static void apply(Context context, SubtitleStyle snapshot) {
+        synchronized (SubtitleSettings.class) { style = snapshot.copy(); }
         changed(context);
+        SubtitleFonts.init(context);
     }
 }

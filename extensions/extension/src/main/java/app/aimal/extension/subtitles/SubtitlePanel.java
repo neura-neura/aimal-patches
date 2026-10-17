@@ -35,6 +35,7 @@ public final class SubtitlePanel {
     private final CaptionView preview;
     private final TextView status;
     private TextView selectedFont;
+    private final List<Button> presetButtons = new ArrayList<>();
     private SubtitleStyle style;
     private List<String> fontNames;
     private String fontSearch = "";
@@ -145,6 +146,7 @@ public final class SubtitlePanel {
         style = SubtitleSettings.style(context);
         content.removeAllViews();
         toggle("Use custom styling", style.enabled, value -> style.enabled = value);
+        savedStyles();
         section("Typography");
         selectedFont = label("Current font: " + style.fontFamily, 14);
         content.addView(selectedFont);
@@ -166,6 +168,8 @@ public final class SubtitlePanel {
         number("Letter spacing", -5, 10, .1f, style.letterSpacing, "px", value -> style.letterSpacing = value);
         color("Text color", style.textColor, value -> style.textColor = value);
         toggle("Text shadow", style.textShadow, value -> style.textShadow = value);
+        number("Outline width", 0, 8, .1f, style.outlineWidth, "px", value -> style.outlineWidth = value);
+        color("Outline color", style.outlineColor, value -> style.outlineColor = value);
         section("Position and width");
         number("Bottom offset", 0, 100, 1, style.bottomOffset, "%", value -> style.bottomOffset = value);
         final LinearLayout widthControls = column();
@@ -200,8 +204,106 @@ public final class SubtitlePanel {
         if (binding) return;
         SubtitleSettings.changed(context);
         if (selectedFont != null) selectedFont.setText("Current font: " + style.fontFamily);
+        markAppliedStyle();
         preview.invalidate();
         status.setText("Saved · preview and subtitles updated");
+    }
+
+    private void savedStyles() {
+        section("Saved styles");
+        content.addView(label("Save every current setting, including the font. Select a style to apply it.", 12));
+        presetButtons.clear();
+        for (SubtitlePresets.Entry entry : SubtitlePresets.all(context)) {
+            Button apply = button(entry.name, () -> applyPreset(entry));
+            apply.setTag(entry);
+            presetButtons.add(apply);
+            content.addView(apply);
+            if (!entry.builtin) content.addView(button("Manage " + entry.name, () -> {
+                new android.app.AlertDialog.Builder(context).setTitle(entry.name)
+                    .setItems(new String[]{"Save current settings", "Rename", "Delete"}, (dialog, action) -> {
+                        if (action == 0) presetAction(() -> SubtitlePresets.update(context, entry.id, style), "Style updated.");
+                        else if (action == 1) namePreset(entry);
+                        else new android.app.AlertDialog.Builder(context).setTitle("Delete " + entry.name + "?")
+                            .setMessage("Your current subtitle settings will be kept.")
+                            .setNegativeButton("Cancel", null)
+                            .setPositiveButton("Delete", (confirm, which) -> presetAction(
+                                () -> SubtitlePresets.delete(context, entry.id), "Style deleted.")).show();
+                    }).show();
+            }));
+        }
+        content.addView(button("Save as new", () -> namePreset(null)));
+        markAppliedStyle();
+    }
+
+    private void markAppliedStyle() {
+        for (Button button : presetButtons) {
+            SubtitlePresets.Entry entry = (SubtitlePresets.Entry)button.getTag();
+            boolean active = SubtitlePresets.matches(style, entry.style);
+            button.setText(entry.name + (active ? " · Applied" : entry.builtin ? " · Included" : ""));
+            button.setSelected(active);
+        }
+    }
+
+    private void namePreset(SubtitlePresets.Entry entry) {
+        EditText name = input(entry == null ? "" : entry.name);
+        name.setHint("Style name"); name.setContentDescription("Style name");
+        name.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(80)});
+        android.app.AlertDialog prompt = new android.app.AlertDialog.Builder(context)
+            .setTitle(entry == null ? "Save as new" : "Rename style").setView(name)
+            .setNegativeButton("Cancel", null).setPositiveButton("Save", null).create();
+        prompt.setOnShowListener(ignored -> {
+            if (tv) focusOutline(prompt.getWindow().getDecorView());
+            prompt.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                if (name.getText().toString().trim().isEmpty()) { name.setError("Enter a style name"); return; }
+                try {
+                    if (entry == null) SubtitlePresets.saveNew(context, name.getText().toString(), style);
+                    else SubtitlePresets.rename(context, entry.id, name.getText().toString());
+                    prompt.dismiss(); build(); status.setText(entry == null ? "Style saved." : "Name saved.");
+                } catch (RuntimeException error) { name.setError(error.getMessage()); }
+            });
+        });
+        prompt.show();
+    }
+
+    private void presetAction(Runnable action, String message) {
+        try { action.run(); build(); status.setText(message); }
+        catch (RuntimeException error) { status.setText(error.getMessage()); }
+    }
+
+    private void applyPreset(SubtitlePresets.Entry entry) {
+        if (loading) { status.setText("Please wait for the font download."); return; }
+        String family = entry.style.fontFamily;
+        if (entry.style.fontCssUrl.isEmpty() || SubtitleFonts.installed().contains(family)) {
+            finishPreset(entry); return;
+        }
+        loading = true;
+        status.setText("Downloading fonts for " + entry.name + "…");
+        Context app = context.getApplicationContext();
+        downloads.execute(() -> {
+            String error = null;
+            try {
+                if (!SubtitleFonts.loadCss(app, entry.style.fontCssUrl).contains(family)) {
+                    error = "The stylesheet does not include " + family;
+                }
+            } catch (Exception failure) { error = "Could not load the style font: " + failure.getMessage(); }
+            String message = error;
+            new Handler(Looper.getMainLooper()).post(() -> {
+                loading = false;
+                if (!dialog.isShowing()) return;
+                if (message == null) finishPreset(entry); else status.setText(message);
+            });
+        });
+    }
+
+    private void finishPreset(SubtitlePresets.Entry entry) {
+        SubtitleSettings.apply(context, entry.style);
+        fontNames = SubtitleFonts.installed();
+        build();
+        status.setText(entry.name + " applied · preview and subtitles updated");
+        // Rebuilding replaces the focused button. Restore a useful D-pad target.
+        if (tv) for (Button button : presetButtons) {
+            if (((SubtitlePresets.Entry)button.getTag()).id.equals(entry.id)) { button.requestFocus(); break; }
+        }
     }
 
     private void number(String title, float min, float max, float step, float value, String unit, NumberChange change) {
@@ -293,7 +395,7 @@ public final class SubtitlePanel {
             for (int i = page * 6; i < Math.min(filtered.size(), (page + 1) * 6); i++) {
                 String name = filtered.get(i);
                 Button sample = button((name.equals(style.fontFamily) ? "✓ " : "") + name + " · Aa", () -> {
-                    style.fontFamily = name; changed();
+                    style.fontFamily = name; style.fontCssUrl = ""; changed();
                     // Preserve search and scroll position while selecting a font.
                     for (int j = 0; j < fontList.getChildCount(); j++) {
                         View child = fontList.getChildAt(j);
@@ -321,7 +423,7 @@ public final class SubtitlePanel {
             String next = family.getText().toString().trim();
             if (next.isEmpty()) { family.setError("Enter a font family or path"); return; }
             if (next.startsWith("/") && !new java.io.File(next).isFile()) { family.setError("Cannot read that file"); return; }
-            style.fontFamily = next; changed();
+            style.fontFamily = next; style.fontCssUrl = ""; changed();
         }));
         EditText url = input(style.fontCssUrl);
         url.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
