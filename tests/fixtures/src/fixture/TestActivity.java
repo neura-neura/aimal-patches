@@ -27,9 +27,15 @@ public class TestActivity extends Activity {
         TextView results = new TextView(this); results.setTextColor(Color.WHITE); root.addView(results);
         try {
             SubtitleSettings.reset(this);
+            // Network font imports are verified separately. Hook/timing checks
+            // use a stable system face while the new default downloads.
+            SubtitleSettings.style(this).fontFamily = "sans-serif";
+            SubtitleSettings.style(this).fontCssUrl = "";
+            SubtitleSettings.changed(this);
             if (getPackageName().equals("com.crunchyroll.crunchyroid") && !getClass().getName().endsWith("PlayerActivity")) testCrunchyroll(); else testMedia3();
             testSchema();
-            results.setText("PASS: injected hooks, timing, all 15 style controls, persistence, native fallback");
+            testPresets();
+            results.setText("PASS: injected hooks, timing, all 17 style controls, saved styles, persistence, native fallback");
             Log.i("AimalFixture", results.getText().toString());
         } catch (Throwable error) {
             results.setText("FAIL: " + error); Log.e("AimalFixture", "FAIL", error);
@@ -188,10 +194,12 @@ public class TestActivity extends Activity {
             s -> s.fontFamily = "monospace", s -> { s.useCustomMaxWidth = true; s.maxWidth = 15; },
             s -> { s.useCustomMaxWidth = true; s.maxWidth = 30; }, s -> s.paddingX = 60,
             s -> s.paddingY = 60, s -> s.borderRadius = 40, s -> s.lineHeight = 2,
-            s -> s.letterSpacing = 8, s -> s.textShadow = false
+            s -> s.letterSpacing = 8, s -> s.textShadow = false,
+            s -> s.outlineWidth = 3, s -> { s.outlineWidth = 3; s.outlineColor = Color.RED; }
         );
         for (int i = 0; i < changes.size(); i++) {
             SubtitleStyle base = new SubtitleStyle();
+            base.fontFamily = "sans-serif"; base.fontCssUrl = "";
             Bitmap before = paint(text, base);
             changes.get(i).accept(base);
             check(!equal(before, paint(text, base)), "Style property " + i + " has no visual effect");
@@ -209,6 +217,50 @@ public class TestActivity extends Activity {
                 + "Dialogue: invalid,invalid,Malformed\n"
                 + "Dialogue: 0:00:03.00,0:00:01.00,{\\p1}m 0 0 l 1 1{\\p0}Visible\n");
         check(reordered.at(1500).equals("Bold, text\nNext\nVisible"), "Reordered columns, overrides or ASS drawings failed");
+        SubtitleSettings.reset(this);
+    }
+    private void testPresets() throws Exception {
+        getSharedPreferences("aimal_subtitle_presets_v1", 0).edit().clear().commit();
+        List<SubtitlePresets.Entry> included = SubtitlePresets.all(this);
+        check(included.size() == 2, "Included styles missing");
+        SubtitleStyle original = included.get(0).style;
+        check(original.fontSize == 54 && original.fontWeight == 500 && original.fontFamily.equals("GothamPro"), "TV default snapshot is wrong");
+        SubtitleStyle anime = included.get(1).style;
+        check(anime.fontSize == 46 && anime.outlineWidth == 2.4f && anime.fontWeight == 700
+            && !anime.textShadow && anime.backgroundOpacity == 0 && anime.bottomOffset == 10, "Anime Classic differs from Noir");
+        original.fontSize = 120;
+        check(SubtitlePresets.all(this).get(0).style.fontSize == 54, "Built-in was mutated");
+        try { SubtitlePresets.delete(this, "default"); throw new AssertionError("Built-in was deleted"); }
+        catch (IllegalArgumentException expected) { }
+        try { SubtitlePresets.saveNew(this, "  ", anime); throw new AssertionError("Blank name accepted"); }
+        catch (IllegalArgumentException expected) { }
+        String id = SubtitlePresets.saveNew(this, "  My anime  ", anime);
+        anime.outlineWidth = 8; anime.fontFamily = "monospace";
+        SubtitlePresets.Entry saved = SubtitlePresets.all(this).get(2);
+        check(saved.id.equals(id) && saved.name.equals("My anime") && saved.style.outlineWidth == 2.4f
+            && saved.style.fontFamily.equals("Arial"), "Saved snapshot was not detached or persisted");
+        SubtitleSettings.apply(this, saved.style);
+        long revision = SubtitleSettings.revision();
+        check(SubtitlePresets.matches(SubtitleStyle.read(this), saved.style), "Preset was not persisted as active style");
+        check(equal(paint("Preset rendering", saved.style), paint("Preset rendering", SubtitleSettings.style(this))), "Preset renderer mismatch");
+        SubtitleSettings.style(this).outlineColor = Color.GREEN;
+        check(!SubtitlePresets.matches(SubtitleSettings.style(this), saved.style), "Edited style still marked as applied");
+        SubtitlePresets.update(this, id, SubtitleSettings.style(this));
+        SubtitlePresets.rename(this, id, "Renamed");
+        saved = SubtitlePresets.all(this).get(2);
+        check(saved.name.equals("Renamed") && saved.style.outlineColor == Color.GREEN, "Update or rename failed");
+        SubtitleSettings.apply(this, SubtitlePresets.all(this).get(0).style);
+        check(SubtitleSettings.revision() > revision, "Applying a preset did not invalidate paused captions");
+        SubtitlePresets.delete(this, id);
+        check(SubtitlePresets.all(this).size() == 2 && SubtitleSettings.style(this).fontSize == 54, "Delete changed the current style");
+        org.json.JSONObject legacy = new org.json.JSONObject().put("fontSize", 68).put("fontFamily", "serif");
+        SubtitleStyle upgraded = SubtitleStyle.fromJson(legacy);
+        check(upgraded.fontSize == 68 && upgraded.fontFamily.equals("serif") && upgraded.outlineWidth == 0, "Legacy settings changed on upgrade");
+        SubtitleStyle bounded = SubtitleStyle.fromJson(new org.json.JSONObject().put("outlineWidth", 200).put("fontSize", -1));
+        check(bounded.outlineWidth == 8 && bounded.fontSize == 8, "Stored values are not bounded");
+        getSharedPreferences("aimal_subtitle_presets_v1", 0).edit().putString("entries", "broken JSON").commit();
+        check(SubtitlePresets.all(this).size() == 2, "Damaged storage hid built-ins");
+        getSharedPreferences("aimal_subtitle_presets_v1", 0).edit().clear().commit();
         SubtitleSettings.reset(this);
     }
     private Bitmap paint(String text, SubtitleStyle style) {

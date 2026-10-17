@@ -53,6 +53,17 @@ public final class CaptionPainter {
                 s.borderRadius * scale, s.borderRadius * scale, background);
         canvas.save();
         canvas.translate(left + px, top + py);
+        // Match Noir's stroke-then-fill paint order: the outline stays outside
+        // the glyph instead of reducing the white interior of the letters.
+        if (s.outlineWidth > 0) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeWidth(s.outlineWidth * 2 * scale);
+            paint.setColor(s.outlineColor);
+            layout.draw(canvas);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(s.textColor);
+        }
         layout.draw(canvas);
         canvas.restore();
     }

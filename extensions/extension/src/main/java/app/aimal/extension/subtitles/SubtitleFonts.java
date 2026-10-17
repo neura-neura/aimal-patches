@@ -36,13 +36,21 @@ public final class SubtitleFonts {
         String name = style.fontFamily;
         String address = style.fontCssUrl;
         if (address.isEmpty() && name.equals("GothamPro")) address = DEFAULT_CSS;
-        if (!address.isEmpty() && new File(directory, fileName(name)).isFile()
-                && !new File(directory, fileName(name) + ".weights-v2").isFile() && migrations.add(name)) {
+        if (!address.isEmpty()
+                && !new File(directory, fileName(name) + ".weights-v2").isFile()
+                && !migrations.contains(name)
+                && (new File(directory, fileName(name)).isFile() || !installed().contains(name))
+                && migrations.add(name)) {
             final String source = address;
             final Context contextApp = app;
             new Thread(() -> {
                 try { loadCss(contextApp, source); SubtitleSettings.changed(contextApp); }
-                catch (Exception ignored) { /* Keep the old face available offline. */ }
+                catch (Exception ignored) { /* Keep the current face available offline. */ }
+                finally {
+                    // Only suppress concurrent imports, not future retries or
+                    // migration after the cache was replaced in this process.
+                    synchronized (SubtitleFonts.class) { migrations.remove(name); }
+                }
             }, "Aimal-font-upgrade").start();
         }
     }

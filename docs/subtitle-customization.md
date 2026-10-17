@@ -13,8 +13,8 @@ TV patch uses remote shortcuts; see the [TV guide](android-tv.md).
 ## Style options
 
 The reference is the `SubtitleStyle` schema in
-[Noir Player at revision 54eb8d1](https://github.com/neura-neura/noir-player/blob/54eb8d176475186580259686050b8f4bec141aeb/src/App.tsx#L97).
-All 15 properties are included:
+[Noir Player at revision 29759cd](https://github.com/neura-neura/noir-player/blob/29759cd00029f94bf8f0bc214a5ef3974d1cafad/src/lib/subtitle-styles.ts).
+All 17 properties are included:
 
 | Noir property | Control | Range |
 | --- | --- | --- |
@@ -33,12 +33,35 @@ All 15 properties are included:
 | `lineHeight` | Line height | 0.5–3 |
 | `letterSpacing` | Letter spacing | −5–10 px |
 | `textShadow` | Text shadow | On/off |
+| `outlineWidth` | Outline width | 0–8 px |
+| `outlineColor` | Outline color | `#RRGGBB` |
 
 Numeric controls accept sliders or exact typed values. **Reset style** restores
-defaults. The default font is Android's `sans-serif`;
-**Load GothamPro from Noir** imports the reference font family. Pixels are
+defaults. The default font is GothamPro;
+**Load GothamPro from Noir** can retry its download. Pixels are
 Android screen pixels. Changing maximum width changes wrapping while preserving
 font size. Percentages use the actual subtitle drawing area.
+
+## Saved styles
+
+Open **Saved styles** in the editor. **Save as new** stores every setting,
+including the font and its CSS address. Select a style to update the preview
+and active subtitles. Under **Manage**, rename it, replace its settings with
+the current style, or delete it. Deleting a saved style keeps the current
+subtitle settings. The library persists on the device; it is not synced.
+
+Two protected styles are included. **Default** uses the contributor's requested
+TV configuration: GothamPro, 54 px, weight 500, white text, a 23% black background,
+4% bottom offset, padding 12/8 px, corners 8 px, line height 1.18, letter spacing
+0.2 px, shadow enabled, and no outline. Maximum width is unrestricted (78% if enabled).
+**Anime Classic** follows Noir's preset: Arial/Helvetica with Android sans-serif
+fallback, 46 px, weight 700, no background or padding, 10% bottom offset, line
+height 1.23, no letter spacing or shadow, and a black 2.4 px outline. Import
+Arial to use that exact font on Android.
+
+Save a new copy to customize an included style. **Reset style** applies Default
+without deleting the library. Upgrades preserve existing active settings.
+Uncached CSS fonts require Internet access; imported fonts are available offline.
 
 ## Install with Morphe Manager
 
@@ -98,12 +121,15 @@ sign positioning. Disable **Use custom styling** to restore native ASS on mobile
 ## Validation and remaining coverage
 
 GitHub Actions builds the bundle and patches Android fixtures with Morphe
-Desktop 1.18.0. Checks cover injected DEX hooks, all 15 visual properties,
+Desktop 1.18.0. Checks cover injected DEX hooks, all 17 visual properties,
 paused updates, persistence, overlapping cues, line breaks, backward seeks,
 expiration, track disposal, and native fallback. Font tests cover real Gotham
 weights and migration of older caches. Controller tests check complete hiding,
 restoration, and D-pad activation. TV tests cover modern/legacy routing,
 subtitles-off, short OK delivery, long OK/Menu shortcuts, and initial focus.
+Saved-style checks cover detached snapshots, included-style protection,
+create/rename/update/delete, bounded storage values, older settings, damaged
+storage, and focus after applying a preset on TV.
 
 The panel is checked in portrait and landscape:
 [portrait](screenshots/subtitles-portrait.png) and

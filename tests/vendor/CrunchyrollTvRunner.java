@@ -64,6 +64,20 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         view.layout(0, 0, 1920, 1080);
         check(pixels(draw(view)) > 0, "Original TV caption drawing missing");
         enabled.setBoolean(style, true);
+        Class<?> presets = loader.loadClass("app.aimal.extension.subtitles.SubtitlePresets");
+        java.util.List<?> included = (java.util.List<?>)presets.getMethod("all", Context.class).invoke(null, context);
+        Object normal = included.get(0).getClass().getField("style").get(included.get(0));
+        Object anime = included.get(1).getClass().getField("style").get(included.get(1));
+        Method apply = settings.getMethod("apply", Context.class, style.getClass());
+        apply.invoke(null, context, normal);
+        Bitmap normalPreset = draw(view);
+        apply.invoke(null, context, anime);
+        Bitmap animePreset = draw(view);
+        check(pixels(animePreset) > 0 && !normalPreset.sameAs(animePreset), "Original TV view did not apply Anime Classic");
+        Object active = settings.getMethod("style", Context.class).invoke(null, context);
+        check(active.getClass().getField("outlineWidth").getFloat(active) == 2.4f, "Original TV style lost outline");
+        apply.invoke(null, context, normal);
+        check(normalPreset.sameAs(draw(view)), "Original TV view did not restore Default");
         viewClass.getMethod("setCues", java.util.List.class).invoke(view, Collections.emptyList());
         check(pixels(draw(view)) == 0, "Expired TV caption remains");
         loader.loadClass("com.crunchyroll.crunchyroid.player.ui.PlayerActivity")

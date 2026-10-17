@@ -86,6 +86,18 @@ public final class PlayerActivity extends fixture.TestActivity {
                         dispatchKeyEvent(new KeyEvent(time + 2000, time + 2100, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MENU, 0));
                         dialog = (android.app.Dialog)((java.lang.ref.WeakReference<?>)dialogField.get(press)).get();
                         if (dialog == null || !dialog.isShowing()) throw new AssertionError("Menu did not reopen editor");
+                        android.widget.Button anime = findButton(dialog.getWindow().getDecorView(), "Anime Classic");
+                        if (anime == null) throw new AssertionError("Anime Classic button missing");
+                        long before = app.aimal.extension.subtitles.SubtitleSettings.revision();
+                        anime.performClick();
+                        app.aimal.extension.subtitles.SubtitleStyle selected = app.aimal.extension.subtitles.SubtitleSettings.style(this);
+                        if (selected.outlineWidth != 2.4f || selected.fontSize != 46 || selected.textShadow)
+                            throw new AssertionError("Preset button did not apply Anime Classic");
+                        if (app.aimal.extension.subtitles.SubtitleSettings.revision() <= before)
+                            throw new AssertionError("Preset button did not hot reload captions");
+                        focus = dialog.getWindow().getDecorView().findFocus();
+                        if (!(focus instanceof android.widget.Button) || !((android.widget.Button)focus).getText().toString().contains("Anime Classic · Applied"))
+                            throw new AssertionError("Applying a preset lost TV focus or active status");
                         result = "PASS: TV clean video/SSA routing, subtitles-off, cue/draw hooks, short OK replay, long OK/Menu editor and initial D-pad focus";
                     } catch (Throwable error) { result = "FAIL: " + error; }
                     try (java.io.OutputStream out = openFileOutput("tv-result.txt", MODE_PRIVATE)) { out.write(result.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
@@ -96,5 +108,17 @@ public final class PlayerActivity extends fixture.TestActivity {
                 catch (Exception ignored) { }
             }
         }, 500);
+    }
+    private android.widget.Button findButton(android.view.View view, String prefix) {
+        if (view instanceof android.widget.Button && ((android.widget.Button)view).getText().toString().startsWith(prefix))
+            return (android.widget.Button)view;
+        if (view instanceof android.view.ViewGroup) {
+            android.view.ViewGroup group = (android.view.ViewGroup)view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                android.widget.Button result = findButton(group.getChildAt(i), prefix);
+                if (result != null) return result;
+            }
+        }
+        return null;
     }
 }
