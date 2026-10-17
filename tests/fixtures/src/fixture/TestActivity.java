@@ -27,6 +27,11 @@ public class TestActivity extends Activity {
         TextView results = new TextView(this); results.setTextColor(Color.WHITE); root.addView(results);
         try {
             SubtitleSettings.reset(this);
+            // Network font imports are verified separately. Hook/timing checks
+            // use a stable system face while the new default downloads.
+            SubtitleSettings.style(this).fontFamily = "sans-serif";
+            SubtitleSettings.style(this).fontCssUrl = "";
+            SubtitleSettings.changed(this);
             if (getPackageName().equals("com.crunchyroll.crunchyroid") && !getClass().getName().endsWith("PlayerActivity")) testCrunchyroll(); else testMedia3();
             testSchema();
             testPresets();
@@ -194,6 +199,7 @@ public class TestActivity extends Activity {
         );
         for (int i = 0; i < changes.size(); i++) {
             SubtitleStyle base = new SubtitleStyle();
+            base.fontFamily = "sans-serif"; base.fontCssUrl = "";
             Bitmap before = paint(text, base);
             changes.get(i).accept(base);
             check(!equal(before, paint(text, base)), "Style property " + i + " has no visual effect");
