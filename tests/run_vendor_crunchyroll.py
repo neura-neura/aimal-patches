@@ -30,8 +30,10 @@ def run(*cmd, capture=False):
 devices = run("adb", "devices", capture=True).stdout.splitlines()[1:]
 connected = [line.split()[0] for line in devices if line.strip() and line.split()[-1] == "device"]
 selected = args.device if args.device else (connected[0] if len(connected) == 1 else None)
-if selected not in connected or not selected.startswith("emulator-"):
+if selected not in connected or not (selected.startswith("emulator-") or selected.startswith("localhost:")):
     raise RuntimeError("Connect exactly one isolated emulator; this runner does not install on physical devices")
+if run("adb", "-s", selected, "shell", "getprop", "ro.kernel.qemu", capture=True).stdout.strip() != "1":
+    raise RuntimeError("Selected device is not an emulator; refusing to replace a physical device's app")
 os.environ["ANDROID_SERIAL"] = selected
 key = out / "vendor-test.jks"
 if not key.exists():

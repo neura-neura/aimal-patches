@@ -127,7 +127,8 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         // The actual legacy CMS publishes queue events before n.put(source,...).
         // Keep CURRENT populated and NEXT absent, with the new provider only in t.
         set(legacy,"a","queued-episode");
-        set(cms,"t",new LegacyProvider(legacy));
+        Object pending=allocate(loader.loadClass("com.crunchyroll.cms.models.NextEpisodeData"));
+        set(pending,"b",legacy);set(cms,"t",pending);
         Class<?> queueClass=loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$QueueEvent$PrepareQueueStream");
         Constructor<?> queueConstructor=null;
         for(Constructor<?> c:queueClass.getConstructors()) if(c.getParameterCount()==10) queueConstructor=c;
