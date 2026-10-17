@@ -42,6 +42,13 @@ font size. Percentages use the actual subtitle drawing area.
 
 ## Install with Morphe Manager
 
+For ready-to-install APKs without Morphe, see this fork's
+[1.3.4 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.3.4).
+Choose `Crunchyroll-Android-3.117.0-Aimal-1.3.4-English.apk` for phones/tablets,
+or the separate `Crunchyroll-TV-3.74.0-Aimal-1.3.4-English.apk` for Android TV.
+These files use a different signature from the official app and may differ
+from your Morphe signing key; see the release notes before installing.
+
 1. Select a patch source containing this feature. The development fork is
    [neura-neura/aimal-patches](https://github.com/neura-neura/aimal-patches), which
    can be added through [Morphe's source link](https://morphe.software/add-source?github=neura-neura/aimal-patches).
@@ -145,5 +152,6 @@ python tests/run_vendor_crunchyroll.py --device emulator-5554 --sdk C:/Android/S
 The vendor runner accepts only an explicitly selected isolated emulator. It
 installs the app and instrumentation with a temporary test signature. Remove
 conflicting test installs first. It does not sign in or play remote content.
-Commercial APKs and private signing keys are excluded from the repository and
-public releases.
+Original APKs used by the tests and private signing keys are excluded from the
+Git repository. This fork's release assets also offer signed patched Crunchyroll
+APKs for installation without Morphe.
