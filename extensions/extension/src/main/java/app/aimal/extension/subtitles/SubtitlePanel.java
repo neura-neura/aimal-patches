@@ -49,8 +49,12 @@ public final class SubtitlePanel {
     }
 
     public static Dialog showTv(Context context, Runnable aspect) {
+        return showTv(context, aspect, app.aimal.extension.crunchyroll.TvPlaybackSubtitles::diagnostics);
+    }
+
+    public static Dialog showTv(Context context, Runnable aspect, java.util.concurrent.Callable<String> diagnostics) {
         try {
-            Dialog dialog = new SubtitlePanel(context, aspect).dialog;
+            Dialog dialog = new SubtitlePanel(context, aspect, diagnostics).dialog;
             dialog.show();
             return dialog;
         } catch (Throwable error) {
@@ -60,6 +64,10 @@ public final class SubtitlePanel {
     }
 
     private SubtitlePanel(Context context, Runnable aspect) {
+        this(context, aspect, null);
+    }
+
+    private SubtitlePanel(Context context, Runnable aspect, java.util.concurrent.Callable<String> diagnostics) {
         this.context = context;
         tv = aspect != null;
         SubtitleFonts.init(context);
@@ -93,10 +101,13 @@ public final class SubtitlePanel {
         status = label("Changes are saved and applied immediately.", 12);
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         shell.addView(status);
-        if (tv) {
+        if (tv && diagnostics != null) {
             Button diagnostic = button("Playback diagnostics", () -> {
+                String message;
+                try { message = diagnostics.call(); }
+                catch (Exception error) { message = "Diagnostics unavailable: " + error.getClass().getSimpleName(); }
                 new android.app.AlertDialog.Builder(context).setTitle("Subtitle diagnostics")
-                    .setMessage(app.aimal.extension.crunchyroll.TvPlaybackSubtitles.diagnostics())
+                    .setMessage(message)
                     .setPositiveButton("Close", null).show();
             });
             shell.addView(diagnostic);

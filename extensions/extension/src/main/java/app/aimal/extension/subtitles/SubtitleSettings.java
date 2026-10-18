@@ -14,6 +14,8 @@ public final class SubtitleSettings {
     private static long revision;
     private static final List<WeakReference<View>> views = new ArrayList<>();
     private static final Handler main = new Handler(Looper.getMainLooper());
+    private static final List<Runnable> listeners = new ArrayList<>();
+    public static synchronized void onChanged(Runnable listener) { listeners.add(listener); }
     private SubtitleSettings() { }
 
     public static synchronized SubtitleStyle style(Context context) {
@@ -39,6 +41,7 @@ public final class SubtitleSettings {
                 }
             }
             Media3Captions.refresh();
+            for (Runnable listener : new ArrayList<>(listeners)) listener.run();
         });
     }
     public static void reset(Context context) {
