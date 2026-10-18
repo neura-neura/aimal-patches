@@ -1,8 +1,9 @@
 # Aimal Patches
 
 A dedicated subtitle editor with all 15 Noir style properties, live preview,
-and immediate playback updates. See the [subtitle guide](docs/subtitle-customization.md)
-and [Crunchyroll Android TV guide](docs/android-tv.md).
+and immediate playback updates. See the [subtitle guide](docs/subtitle-customization.md),
+[Crunchyroll Android TV guide](docs/android-tv.md), and the separate
+[Netflix TV 8.3.11 integration](docs/netflix-tv.md).
 
 A small bundle of [Morphe](https://morphe.software) patches for four streaming
 apps, all of it aimed at one thing: giving the player back the controls the app
