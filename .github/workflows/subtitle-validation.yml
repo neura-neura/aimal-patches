@@ -2,7 +2,7 @@ name: Subtitle validation
 on:
   workflow_dispatch:
   push:
-    branches: ['codex/subtitle-customization']
+    branches: ['codex/subtitle-customization', 'codex/crunchyroll-tv-381']
 permissions:
   contents: read
   packages: read

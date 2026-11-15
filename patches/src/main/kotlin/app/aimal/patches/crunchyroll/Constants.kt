@@ -9,7 +9,7 @@ val CRUNCHYROLL_TV = Compatibility(
     packageName = "com.crunchyroll.crunchyroid",
     apkFileType = ApkFileType.APKM,
     appIconColor = 0xF47521,
-    targets = listOf(AppTarget(version = "3.74.0")),
+    targets = listOf(AppTarget(version = "3.81.0"), AppTarget(version = "3.74.0")),
 )
 
 val CRUNCHYROLL = Compatibility(

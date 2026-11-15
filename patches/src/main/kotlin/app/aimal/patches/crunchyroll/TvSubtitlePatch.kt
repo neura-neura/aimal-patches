@@ -35,7 +35,10 @@ val crunchyrollTvSubtitlesPatch = bytecodePatch(
             it.type == "Lcom/crunchyroll/player/eventbus/events/Topic\$CMSEvent\$VideoUrlReady;"
         } ?: throw PatchException("Cannot find TV video URL event.")
         // The ordinary constructor runs after default arguments are resolved, before publication.
-        val eventConstructor = event.methods.single { it.name == "<init>" && it.parameterTypes.size == 18 }
+        val eventConstructor = event.methods.singleOrNull {
+            it.name == "<init>" && it.parameterTypes.size in listOf(18, 20) &&
+                it.parameterTypes.last() != "Lkotlin/jvm/internal/DefaultConstructorMarker;"
+        } ?: throw PatchException("Cannot identify the TV video URL constructor.")
         eventConstructor.implementation!!.instructions.withIndex().filter { it.value.opcode == Opcode.RETURN_VOID }
             .map { it.index }.reversed().forEach { index ->
                 eventConstructor.addInstruction(index, "invoke-static/range { p0 .. p0 }, $routing->onVideo(Ljava/lang/Object;)V")
@@ -44,7 +47,10 @@ val crunchyrollTvSubtitlesPatch = bytecodePatch(
         val queueEvent = mutableClassDefByOrNull {
             it.type == "Lcom/crunchyroll/player/eventbus/events/Topic\$QueueEvent\$PrepareQueueStream;"
         } ?: throw PatchException("Cannot find TV queue stream event.")
-        val queueConstructor = queueEvent.methods.single { it.name == "<init>" && it.parameterTypes.size == 10 }
+        val queueConstructor = queueEvent.methods.singleOrNull {
+            it.name == "<init>" && it.parameterTypes.size in listOf(10, 12) &&
+                it.parameterTypes.last() != "Lkotlin/jvm/internal/DefaultConstructorMarker;"
+        } ?: throw PatchException("Cannot identify the TV queue constructor.")
         queueConstructor.implementation!!.instructions.withIndex().filter { it.value.opcode == Opcode.RETURN_VOID }
             .map { it.index }.reversed().forEach { index ->
                 queueConstructor.addInstruction(index, "invoke-static/range { p0 .. p0 }, $routing->onQueue(Ljava/lang/Object;)V")
