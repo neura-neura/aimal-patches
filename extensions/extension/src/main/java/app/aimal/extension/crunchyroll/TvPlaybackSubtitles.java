@@ -76,8 +76,7 @@ public final class TvPlaybackSubtitles {
                 // stale NEXT/PREVIOUS entry cannot supply another episode's track.
                 if (queue) {
                     // 3.81 adds audio-resolution jobs; pending provider moved t -> D.
-                    Object pending = optionalField(component, "D");
-                    if (pending == null) pending = field(component, "t");
+                    Object pending = versionedField(component, "D", "t");
                     Object pendingStream = pending == null ? null : call(pending, "g");
                     if (pendingStream != null && string(field(event, "a")).equals(string(call(pendingStream, "f")))) {
                         provider = pending;
@@ -153,8 +152,10 @@ public final class TvPlaybackSubtitles {
         try { return object.getClass().getMethod(method).getReturnType().getName().equals(type); }
         catch (NoSuchMethodException missing) { return false; }
     }
-    private static Object optionalField(Object object, String name) throws Exception {
-        try { return field(object, name); } catch (NoSuchFieldException missing) { return null; }
+    private static Object versionedField(Object object, String current, String legacy) throws Exception {
+        // A null D is legitimate in 3.81. Do not mistake its t (a jobs map)
+        // for the older pending provider just because D is currently empty.
+        try { return field(object, current); } catch (NoSuchFieldException missing) { return field(object, legacy); }
     }
 
     private static String language(Object component, Map<?, ?> hard, Map<?, ?> subtitles,

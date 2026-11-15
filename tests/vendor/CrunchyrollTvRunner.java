@@ -193,6 +193,15 @@ public final class CrunchyrollTvRunner extends Instrumentation {
             Object queuedBuilder=builderClass.getConstructor().newInstance();builderClass.getMethod("n",String.class).invoke(queuedBuilder,get(queued,"b"));
             check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(queuedBuilder),"b"),"g")).size()==1,"Original queued MediaItem omitted ASS: "+direction);
         }
+        if(stitched) {
+            Object queuedSource=Enum.valueOf((Class)source.getClass(),"NEXT");
+            set(cms,"D",null);set(cms,"t",Collections.emptyMap());
+            set(cms,"n",Collections.singletonMap(queuedSource,new LegacyProvider(legacy)));
+            queueValues[6]=queuedSource;
+            Object existing=queueConstructor.newInstance(queueValues);
+            check(clean.equals(get(existing,"b")) && caption.equals(get(existing,"c")),"Empty pending provider hid existing queued stream");
+            set(cms,"n",Collections.emptyMap());set(cms,"D",pending);
+        }
         queueValues[0]="unrelated-episode";queueValues[1]="https://example.test/unrelated.mpd";
         Object unrelated=queueConstructor.newInstance(queueValues);
         check(queueValues[1].equals(get(unrelated,"b")) && "".equals(get(unrelated,"c")),"Pending provider leaked into unrelated episode");
