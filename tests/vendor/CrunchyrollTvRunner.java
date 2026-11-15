@@ -9,7 +9,7 @@ import android.view.View;
 import java.lang.reflect.*;
 import java.util.Collections;
 
-/** Uses the actual 3.74.0 TV SubtitleView and Cue classes, without a login. */
+/** Uses the actual supported TV SubtitleView and Cue classes, without a login. */
 public final class CrunchyrollTvRunner extends Instrumentation {
     public static final class LegacyProvider {
         private final Object stream;
@@ -96,6 +96,23 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         Object model = allocate(loader.loadClass("com.crunchyroll.katamari.core.model.VideoModel"));
         Object manifest = allocate(loader.loadClass("com.crunchyroll.katamari.core.model.Manifest"));
         Object source = Enum.valueOf((Class)loader.loadClass("com.crunchyroll.player.eventbus.model.SourceType"), "CURRENT");
+        boolean stitched;
+        try { model.getClass().getDeclaredField("j"); stitched=false; }
+        catch (NoSuchFieldException newer) { stitched=true; }
+        if (stitched) {
+            Object content = allocate(loader.loadClass("com.crunchyroll.katamari.core.model.StitchedElement"));
+            Object elements = allocate(loader.loadClass("com.crunchyroll.katamari.core.model.StitchedElements"));
+            Class<?> trackClass = loader.loadClass("com.crunchyroll.katamari.core.model.TextTrack");
+            Class<?> role = loader.loadClass("com.crunchyroll.katamari.core.model.enums.TextTrackRole");
+            Class<?> format = loader.loadClass("com.crunchyroll.katamari.core.model.enums.TextTrackFormat");
+            Constructor<?> track = trackClass.getConstructor(role,format,String.class,String.class,String.class,String.class,String.class);
+            Object burned = Enum.valueOf((Class)format,"BURNED_IN"), external=Enum.valueOf((Class)format,"EXTERNAL");
+            set(content,"g",java.util.Arrays.asList(
+                track.newInstance(role.getEnumConstants()[0],burned,"none","","",clean,""),
+                track.newInstance(role.getEnumConstants()[0],burned,"es-ES","","","https://example.test/burned.mpd",""),
+                track.newInstance(role.getEnumConstants()[0],external,"es-ES","",caption,"","")));
+            set(elements,"b",content);set(manifest,"d",elements);set(manifest,"a",clean);set(model,"c",manifest);
+        } else {
         Constructor<?> hard = loader.loadClass("com.crunchyroll.katamari.core.model.HardSub").getConstructor(String.class,String.class,String.class);
         java.util.Map<String,Object> hardSubs = new java.util.HashMap<>();
         hardSubs.put("none", hard.newInstance("none",clean,"1080p"));
@@ -103,13 +120,15 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         Object entry = loader.loadClass("com.crunchyroll.katamari.core.model.SubtitleEntry").getConstructor(String.class,String.class,String.class).newInstance("es-ES",caption,"ass");
         set(manifest,"i",hardSubs);set(manifest,"a",clean);
         set(model,"c",manifest);set(model,"j",Collections.singletonMap("es-ES",entry));set(model,"k",Collections.emptyMap());
+        }
         set(cms,"s",Collections.singletonMap(source,model));set(cms,"n",Collections.emptyMap());set(cms,"o","es-ES");set(cms,"d",java.util.Locale.forLanguageTag("es-ES"));
         loader.loadClass("app.aimal.extension.crunchyroll.TvPlaybackSubtitles").getMethod("register",Object.class).invoke(null,cms);
         Class<?> eventClass = loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$CMSEvent$VideoUrlReady");
         Constructor<?> constructor = null;
-        for (Constructor<?> c : eventClass.getConstructors()) if (c.getParameterCount()==18) constructor=c;
-        Object[] values = new Object[18]; Class<?>[] types = constructor.getParameterTypes();
-        for(int i=0;i<18;i++) values[i]=types[i]==String.class?"":types[i]==boolean.class?false:types[i].isEnum()?types[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(types[i])?Collections.emptyList():null;
+        for (Constructor<?> c : eventClass.getConstructors()) if (c.getParameterCount()==(stitched?20:18)) constructor=c;
+        check(constructor!=null,"Original video URL constructor missing");
+        Object[] values = new Object[constructor.getParameterCount()]; Class<?>[] types = constructor.getParameterTypes();
+        for(int i=0;i<values.length;i++) values[i]=types[i]==String.class?"":types[i]==boolean.class?false:types[i].isEnum()?types[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(types[i])?Collections.emptyList():null;
         values[0]="https://example.test/burned.mpd";values[1]="";values[12]=source;
         Object event=constructor.newInstance(values);
         check(clean.equals(get(event,"a")) && caption.equals(get(event,"b")),"Actual TV event did not select clean video and external ASS");
@@ -125,6 +144,23 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(off),"b"),"g")).isEmpty(),"Actual subtitles-off retained track");
         // Re-select for the end-to-end playback test; already-built item remains immutable.
         values[0]="https://example.test/burned.mpd";constructor.newInstance(values);
+        if (stitched) {
+            Class<?> queueClass=loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$QueueEvent$PrepareQueueStream");
+            Constructor<?> queueConstructor=null;
+            for (Constructor<?> candidate:queueClass.getConstructors()) if(candidate.getParameterCount()==12) queueConstructor=candidate;
+            check(queueConstructor!=null,"Stitched queue constructor missing");
+            for(String direction:new String[]{"NEXT","PREVIOUS"}) {
+                Object queuedSource=Enum.valueOf((Class)source.getClass(),direction);
+                set(cms,"s",Collections.singletonMap(queuedSource,model));
+                Object[] params=new Object[12];Class<?>[] queueTypes=queueConstructor.getParameterTypes();
+                for(int i=0;i<params.length;i++) params[i]=queueTypes[i]==String.class?"":queueTypes[i].isEnum()?queueTypes[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(queueTypes[i])?Collections.emptyList():null;
+                params[0]="modern-queued";params[1]="https://example.test/burned.mpd";params[6]=queuedSource;
+                Object queued=queueConstructor.newInstance(params);
+                check(clean.equals(get(queued,"b")) && caption.equals(get(queued,"c")),"Stitched queue lost selected track: "+direction);
+                Object queuedBuilder=builderClass.getConstructor().newInstance();builderClass.getMethod("n",String.class).invoke(queuedBuilder,get(queued,"b"));
+                check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(queuedBuilder),"b"),"g")).size()==1,"Stitched queued MediaItem omitted ASS");
+            }
+        }
         // The real Mi Box uses the legacy model: d() exposes captions, while f
         // contains ASS subtitles with no public getter in this optimized APK.
         Object legacy=allocate(loader.loadClass("com.crunchyroll.cms.models.SecureVideoStream"));
@@ -142,13 +178,13 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         // Keep CURRENT populated and NEXT absent, with the new provider only in t.
         set(legacy,"a","queued-episode");
         Object pending=allocate(loader.loadClass("com.crunchyroll.cms.models.NextEpisodeData"));
-        set(pending,"b",legacy);set(cms,"t",pending);
+        set(pending,"b",legacy);set(cms,stitched?"D":"t",pending);
         Class<?> queueClass=loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$QueueEvent$PrepareQueueStream");
         Constructor<?> queueConstructor=null;
-        for(Constructor<?> c:queueClass.getConstructors()) if(c.getParameterCount()==10) queueConstructor=c;
+        for(Constructor<?> c:queueClass.getConstructors()) if(c.getParameterCount()==(stitched?12:10)) queueConstructor=c;
         check(queueConstructor!=null,"Original queue constructor missing");
-        Object[] queueValues=new Object[10];Class<?>[] queueTypes=queueConstructor.getParameterTypes();
-        for(int i=0;i<10;i++) queueValues[i]=queueTypes[i]==String.class?"":queueTypes[i].isEnum()?queueTypes[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(queueTypes[i])?Collections.emptyList():null;
+        Object[] queueValues=new Object[queueConstructor.getParameterCount()];Class<?>[] queueTypes=queueConstructor.getParameterTypes();
+        for(int i=0;i<queueValues.length;i++) queueValues[i]=queueTypes[i]==String.class?"":queueTypes[i].isEnum()?queueTypes[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(queueTypes[i])?Collections.emptyList():null;
         queueValues[0]="queued-episode";queueValues[1]="https://example.test/burned.mpd";queueValues[2]="";
         for(String direction:new String[]{"NEXT","PREVIOUS"}) {
             queueValues[6]=Enum.valueOf((Class)source.getClass(),direction);
@@ -157,9 +193,26 @@ public final class CrunchyrollTvRunner extends Instrumentation {
             Object queuedBuilder=builderClass.getConstructor().newInstance();builderClass.getMethod("n",String.class).invoke(queuedBuilder,get(queued,"b"));
             check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(queuedBuilder),"b"),"g")).size()==1,"Original queued MediaItem omitted ASS: "+direction);
         }
+        if(stitched) {
+            Object queuedSource=Enum.valueOf((Class)source.getClass(),"NEXT");
+            set(cms,"D",null);set(cms,"t",Collections.emptyMap());
+            set(cms,"n",Collections.singletonMap(queuedSource,new LegacyProvider(legacy)));
+            queueValues[6]=queuedSource;
+            Object existing=queueConstructor.newInstance(queueValues);
+            check(clean.equals(get(existing,"b")) && caption.equals(get(existing,"c")),"Empty pending provider hid existing queued stream");
+            set(cms,"n",Collections.emptyMap());set(cms,"D",pending);
+        }
         queueValues[0]="unrelated-episode";queueValues[1]="https://example.test/unrelated.mpd";
         Object unrelated=queueConstructor.newInstance(queueValues);
         check(queueValues[1].equals(get(unrelated,"b")) && "".equals(get(unrelated,"c")),"Pending provider leaked into unrelated episode");
+        if (stitched) {
+            Object compat=allocate(loader.loadClass("com.crunchyroll.core.compatibility.DeviceCompatImpl"));
+            Method gate=compat.getClass().getMethod("a",String.class);
+            // No remote-config dependency is initialized: the patched local
+            // minimum-version predicate must return directly, even for old input.
+            check(Boolean.FALSE.equals(gate.invoke(compat,"0.0.1")),"Forced-update gate still executes");
+            check(Boolean.FALSE.equals(gate.invoke(compat,"3.81.0")),"Current version blocked by local update gate");
+        }
     }
     private void verifyPlayback() throws Exception {
         Throwable[] error=new Throwable[1];

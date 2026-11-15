@@ -1,8 +1,9 @@
-# Crunchyroll Android TV 3.74.0
+# Crunchyroll Android TV
 
-**Subtitle styling (Android TV)** adds all 15 Noir style options, a live preview,
+**Subtitle styling (Android TV)** adds all 17 Noir style options, saved styles, a live preview,
 and immediate updates to text subtitles. It targets the TV variant of
-`com.crunchyroll.crunchyroid` **3.74.0 (22364)**. Image cues keep native drawing.
+`com.crunchyroll.crunchyroid` **3.81.0 (22375)** and **3.74.0 (22364)**.
+Use 3.81.0 for new installations. Image cues keep native drawing.
 
 When the selected language has clean video and an external subtitle track,
 the patch uses that pair instead of video with burned-in captions. The original
@@ -13,6 +14,14 @@ burned-in subtitles are available, the original video is preserved.
 The legacy TV flow stores ASS subtitles separately from closed captions. The
 patch reads both maps; reading only closed captions would leave the preview
 working while the episode still showed burned-in subtitles.
+In 3.81.0 the modern model stores text tracks inside stitched content elements.
+The patch reads that layout, hooks its expanded video/queue constructors, and
+handles the relocated pending provider during episode transitions.
+
+The optional **Disable forced updates (Android TV)** patch supports 3.81.0.
+Select it alongside subtitle styling to skip the local minimum-version update
+gate. Server compatibility is still required; this does not change sign-in,
+subscription access or playback authorization.
 
 After updating an older patched APK, close and reopen the episode once.
 Subsequent style changes apply immediately, including while playback is paused.
@@ -45,7 +54,7 @@ It does not display playback URLs or account credentials.
 Morphe does not need to be installed on the TV.
 
 1. In Morphe Manager on your phone, select a patch source containing this
-   feature and the original **Crunchyroll Android TV 3.74.0 APK/APKM**.
+   feature and the original **Crunchyroll Android TV 3.81.0 APK/APKM**.
 2. Enable only **Subtitle styling (Android TV)**. The mobile Crunchyroll patches
    target a different player and version.
 3. Apply the patch, export the signed APK, and transfer it to the TV using a USB
@@ -76,11 +85,13 @@ private signing key.
 
 ## Validation
 
-Instrumentation uses the original 3.74.0 classes and ExoPlayer to verify modern
+Instrumentation uses the original 3.74.0 and 3.81.0 classes and ExoPlayer to verify modern
 and legacy routing, ASS tracks with an empty closed-caption map, separate ASS
 playback, paused style updates, cue expiration, and native fallback.
 Queue regression tests cover NEXT/PREVIOUS events before their provider is
 stored, external-track attachment, and isolation between episode IDs.
+The 3.81.0 tests cover stitched tracks, new event constructors, the moved pending
+provider, a null pending provider, and the local minimum-version predicate.
 
 The legacy fix was also tested with authenticated playback on a Xiaomi Mi Box 4
 running Android 9. The player received the Spanish ASS track, and the user
@@ -91,6 +102,6 @@ confirmed on the same device, with ASS attachment recorded before the switch.
 To repeat the original-player test on an isolated emulator using your own APK:
 
 ```powershell
-java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling (Android TV)" Crunchyroll-TV-3.74.0.apkm -o patched-tv.apk --unsigned
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling (Android TV)" -e "Disable forced updates (Android TV)" Crunchyroll-TV-3.81.0.apkm -o patched-tv.apk --unsigned
 python tests/run_vendor_crunchyroll.py --tv --device emulator-5554 --sdk C:/Android/Sdk --apk patched-tv.apk --out C:/Temp/aimal-tv-test
 ```

@@ -6,7 +6,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
 import java.util.*;
 
-/** 3.74.0 TV stream routing: clean video plus an independently decoded text track. */
+/** TV stream routing: clean video plus an independently decoded text track. */
 public final class TvPlaybackSubtitles {
     private static volatile WeakReference<Object> cms = new WeakReference<>(null);
     private static volatile String routingStatus = "No video selection received yet";
@@ -54,6 +54,10 @@ public final class TvPlaybackSubtitles {
             Object model = map(field(component, "s")).get(source);
             String clean, language;
             if (model != null) {
+                if (hasReturnType(model, "e", "com.crunchyroll.katamari.core.model.Manifest")) {
+                    String[] selection = stitchedSelection(component, model, video, caption);
+                    clean = selection[0]; caption = selection[1]; language = selection[2];
+                } else {
                 Object manifest = call(model, "g");
                 Map<?, ?> hard = map(call(manifest, "d"));
                 Map<?, ?> subtitles = new LinkedHashMap<>(map(call(model, "i")));
@@ -64,13 +68,15 @@ public final class TvPlaybackSubtitles {
                 Object plain = hard.get("none");
                 clean = plain == null ? string(call(manifest, "h")) : string(call(plain, "a"));
                 if (caption.isEmpty() && subtitles.containsKey(language)) caption = string(call(subtitles.get(language), "a"));
+                }
             } else {
                 Object provider = map(field(component, "n")).get(source);
                 // Z() publishes PrepareQueueStream before storing its provider in n.
                 // t holds the provider being prepared. Match its content ID so a
                 // stale NEXT/PREVIOUS entry cannot supply another episode's track.
                 if (queue) {
-                    Object pending = field(component, "t");
+                    // 3.81 adds audio-resolution jobs; pending provider moved t -> D.
+                    Object pending = versionedField(component, "D", "t");
                     Object pendingStream = pending == null ? null : call(pending, "g");
                     if (pendingStream != null && string(field(event, "a")).equals(string(call(pendingStream, "f")))) {
                         provider = pending;
@@ -106,6 +112,50 @@ public final class TvPlaybackSubtitles {
                 while (tracks.size() > 32) tracks.remove(tracks.keySet().iterator().next());
             }
         } catch (Throwable error) { status("Selection error: " + error.getClass().getSimpleName()); Log.e("AimalSubtitles", "Cannot route TV text track", error); }
+    }
+
+    /** 3.81 moved hard/external tracks into the content element of a manifest. */
+    private static String[] stitchedSelection(Object component, Object model, String video, String caption) throws Exception {
+        Object manifest = call(model, "e");
+        Object content = call(call(manifest, "i"), "d");
+        Object tracks = call(content, "h");
+        Map<String, String> hard = new LinkedHashMap<>(), external = new LinkedHashMap<>();
+        if (tracks instanceof Iterable) for (Object track : (Iterable<?>)tracks) {
+            Object format = call(track, "b");
+            String kind = format instanceof Enum ? ((Enum<?>)format).name() : string(format);
+            String locale = string(call(track, "c"));
+            if (kind.equals("BURNED_IN")) hard.put(locale, string(call(track, "e")));
+            else if (kind.equals("EXTERNAL")) external.put(locale, string(call(track, "a")));
+        }
+        String language = "";
+        for (Map.Entry<String,String> entry : external.entrySet()) {
+            if (!caption.isEmpty() && caption.equals(entry.getValue())) { language = entry.getKey(); break; }
+        }
+        if (language.isEmpty()) for (Map.Entry<String,String> entry : hard.entrySet()) {
+            if (video.equals(entry.getValue())) { language = entry.getKey(); break; }
+        }
+        if (language.isEmpty()) language = string(field(component, "o"));
+        if (language.isEmpty()) {
+            Object locale = field(component, "d");
+            language = locale instanceof Locale ? ((Locale)locale).toLanguageTag() : "";
+        }
+        String clean = hard.get("none");
+        if (clean == null || clean.isEmpty()) clean = string(call(manifest, "j"));
+        if (caption.isEmpty() && !language.equals("none")) {
+            caption = external.containsKey(language) ? external.get(language) : external.getOrDefault("", "");
+        }
+        status("Stitched model · videos=" + hard.size() + " · tracks=" + external.size() + " · language=" + language);
+        return new String[]{clean, caption, language};
+    }
+
+    private static boolean hasReturnType(Object object, String method, String type) {
+        try { return object.getClass().getMethod(method).getReturnType().getName().equals(type); }
+        catch (NoSuchMethodException missing) { return false; }
+    }
+    private static Object versionedField(Object object, String current, String legacy) throws Exception {
+        // A null D is legitimate in 3.81. Do not mistake its t (a jobs map)
+        // for the older pending provider just because D is currently empty.
+        try { return field(object, current); } catch (NoSuchFieldException missing) { return field(object, legacy); }
     }
 
     private static String language(Object component, Map<?, ?> hard, Map<?, ?> subtitles,

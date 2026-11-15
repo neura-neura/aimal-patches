@@ -73,7 +73,7 @@ Uncached CSS fonts require Internet access; imported fonts are available offline
 3. Select your original APK/APKM. Reference versions are Crunchyroll mobile
    **3.117.0**, HBO Max **7.9.0.84**, Disney+ **26.14.1+rc2-2026.08.20**, and
    Viki **26.5.0**. HBO Max uses `com.wbd.stream`. Crunchyroll TV **3.74.0** uses
-   its [separate patch](android-tv.md).
+   its [separate patch](android-tv.md), which also supports TV **3.81.0**.
 4. For mobile Crunchyroll, enable **Subtitle styling**, which depends on
    **Aspect ratio control**. For other apps, enable
    **Playback speed and aspect ratio**.

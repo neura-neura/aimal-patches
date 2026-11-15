@@ -29,19 +29,21 @@ for app, package, patch in [
     ("crunchyroll", "com.crunchyroll.crunchyroid", "Subtitle styling"),
     ("media3", "com.wbd.stream", "Playback speed and aspect ratio"),
     ("crunchyroll-tv", "com.crunchyroll.crunchyroid", "Subtitle styling (Android TV)"),
+    ("crunchyroll-tv381", "com.crunchyroll.crunchyroid", "Subtitle styling (Android TV)"),
 ]:
     out = args.out / app
     run(sys.executable, Path(__file__).with_name("build_fixture.py"), "--sdk", args.sdk, "--app", app, "--out", out)
     apk = out / "patched.apk"
-    run("java", "-jar", args.morphe, "patch", "-p", args.bundle, "--exclusive", "-e", patch,
+    extra = ["-e", "Disable forced updates (Android TV)"] if app == "crunchyroll-tv381" else []
+    run("java", "-jar", args.morphe, "patch", "-p", args.bundle, "--exclusive", "-e", patch, *extra,
         out / "fixture.apk", "-o", apk, "--unsigned", "-r", out / "patch-result.json")
     run("java", "-jar", tools / "lib/apksigner.jar", "sign", "--ks", key, "--ks-pass", "pass:android", apk)
     run("adb", "install", "-r", apk)
     run("adb", "shell", "am", "force-stop", package)
     run("adb", "shell", "run-as", package, "rm", "-f", "files/fixture-result.txt", "files/font-result.txt", "files/controls-result.txt", "files/tv-result.txt")
-    activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if app == "crunchyroll-tv" else "fixture.TestActivity"
+    activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if app.startswith("crunchyroll-tv") else "fixture.TestActivity"
     run("adb", "shell", "am", "start", "-W", "-S", "-n", package + "/" + activity, "--ez", "fonts", str(args.fonts).lower())
-    files = ["fixture-result.txt"] + (["tv-result.txt"] if app == "crunchyroll-tv" else []) + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
+    files = ["fixture-result.txt"] + (["tv-result.txt"] if app.startswith("crunchyroll-tv") else []) + (["controls-result.txt"] if app == "crunchyroll" else []) + (["font-result.txt"] if args.fonts else [])
     for file in files:
         deadline = time.monotonic() + 55
         while time.monotonic() < deadline:
