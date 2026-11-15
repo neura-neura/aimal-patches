@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-17T23:34:07",
-  "description": "# [1.4.0](https://github.com/neura-neura/aimal-patches/compare/v1.3.4...v1.4.0) (2026-10-17)\n\n\n### Bug Fixes\n\n* allow font cache migration after completing an earlier import ([f4e4437](https://github.com/neura-neura/aimal-patches/commit/f4e4437aab0787aee5d6f61d3566484ed5620f13))\n* retain TV preset focus when activated from touch mode ([2266de4](https://github.com/neura-neura/aimal-patches/commit/2266de4ddb07aeaab0ec7f41c7a43892c8d291b8))\n\n\n### Features\n\n* add saved subtitle styles and Anime Classic outline preset ([c6567dc](https://github.com/neura-neura/aimal-patches/commit/c6567dc6a194788aad086d65c23b111035f77860))",
-  "download_url": "https://github.com/neura-neura/aimal-patches/releases/download/v1.4.0/patches-1.4.0.mpp",
+  "created_at": "2026-11-15T20:02:26",
+  "description": "# [1.5.0](https://github.com/neura-neura/aimal-patches/compare/v1.4.0...v1.5.0) (2026-11-15)\n\n\n### Bug Fixes\n\n* distinguish an empty TV pending provider from audio jobs ([9cac436](https://github.com/neura-neura/aimal-patches/commit/9cac43648f0a9604064efa5f0ad4fe8594996e35))\n\n\n### Features\n\n* support Crunchyroll TV 3.81.0 and disable its forced-update gate ([dd5f1a4](https://github.com/neura-neura/aimal-patches/commit/dd5f1a4256d7e50ea2261e517b84462db297e907))",
+  "download_url": "https://github.com/neura-neura/aimal-patches/releases/download/v1.5.0/patches-1.5.0.mpp",
   "signature_download_url": "",
-  "version": "1.4.0"
+  "version": "1.5.0"
 }

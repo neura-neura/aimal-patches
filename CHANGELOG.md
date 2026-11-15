@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/neura-neura/aimal-patches/compare/v1.4.0...v1.5.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* distinguish an empty TV pending provider from audio jobs ([9cac436](https://github.com/neura-neura/aimal-patches/commit/9cac43648f0a9604064efa5f0ad4fe8594996e35))
+
+
+### Features
+
+* support Crunchyroll TV 3.81.0 and disable its forced-update gate ([dd5f1a4](https://github.com/neura-neura/aimal-patches/commit/dd5f1a4256d7e50ea2261e517b84462db297e907))
+
 # [1.4.0](https://github.com/neura-neura/aimal-patches/compare/v1.3.4...v1.4.0) (2026-10-17)
 
 
