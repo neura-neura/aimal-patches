@@ -110,8 +110,8 @@ public final class CrunchyrollTvRunner extends Instrumentation {
             set(content,"g",java.util.Arrays.asList(
                 track.newInstance(role.getEnumConstants()[0],burned,"none","","",clean,""),
                 track.newInstance(role.getEnumConstants()[0],burned,"es-ES","","","https://example.test/burned.mpd",""),
-                track.newInstance(role.getEnumConstants()[0],external,"es-ES",caption,"","","")));
-            set(elements,"b",content);set(manifest,"d",elements);set(manifest,"b",clean);set(model,"c",manifest);
+                track.newInstance(role.getEnumConstants()[0],external,"es-ES","",caption,"","")));
+            set(elements,"b",content);set(manifest,"d",elements);set(manifest,"a",clean);set(model,"c",manifest);
         } else {
         Constructor<?> hard = loader.loadClass("com.crunchyroll.katamari.core.model.HardSub").getConstructor(String.class,String.class,String.class);
         java.util.Map<String,Object> hardSubs = new java.util.HashMap<>();
