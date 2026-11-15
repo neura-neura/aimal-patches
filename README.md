@@ -1,6 +1,6 @@
 # Aimal Patches — Noir subtitle customization fork
 
-A dedicated subtitle editor with all 15 Noir style properties, live preview,
+A dedicated subtitle editor with all 17 Noir style properties, saved styles, live preview,
 and immediate playback updates. See the [subtitle guide](docs/subtitle-customization.md)
 and [Crunchyroll Android TV guide](docs/android-tv.md).
 
@@ -175,10 +175,10 @@ chain, so the player takes the full width. On a phone it is a no-op.
 
 ## Status
 
-The subtitle bundle builds in GitHub Actions. Android fixtures cover all 15
+The subtitle bundle builds in GitHub Actions. Android fixtures cover all 17
 style properties, persistence, paused updates, ASS timing, native fallback,
 font weights, controller visibility, and TV remote shortcuts. Instrumentation
-also checks the original Crunchyroll mobile 3.117.0 and TV 3.74.0 players.
+also checks the original Crunchyroll mobile 3.117.0 and TV 3.74.0/3.81.0 players.
 
 The user confirmed authenticated TV playback and style changes on a Xiaomi Mi
 Box 4 running Android 9. Commercial HBO Max, Disney+, and Viki APKs have not

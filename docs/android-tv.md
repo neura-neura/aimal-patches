@@ -60,7 +60,7 @@ It does not display playback URLs or account credentials.
 Morphe does not need to be installed on the TV.
 
 1. In Morphe Manager on your phone, select a patch source containing this
-   feature and the original **Crunchyroll Android TV 3.74.0 APK/APKM**.
+   feature and the original **Crunchyroll Android TV 3.81.0 APK/APKM**.
 2. Enable only **Subtitle styling (Android TV)**. The mobile Crunchyroll patches
    target a different player and version.
 3. Apply the patch, export the signed APK, and transfer it to the TV using a USB
