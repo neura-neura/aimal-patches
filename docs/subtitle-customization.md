@@ -71,9 +71,9 @@ uncached CSS font requires Internet access.
 ## Install with Morphe Manager
 
 For ready-to-install APKs without Morphe, see this fork's
-[1.4.0 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.4.0).
-Choose `Crunchyroll-Android-3.117.0-Aimal-1.4.0-English.apk` for phones/tablets,
-or the separate `Crunchyroll-TV-3.74.0-Aimal-1.4.0-English.apk` for Android TV.
+[latest release](https://github.com/neura-neura/aimal-patches/releases/latest).
+Choose the `Crunchyroll-Android-3.117.0` APK for phones/tablets,
+or the separate `Crunchyroll-TV-3.81.0` APK for Android TV.
 These files use a different signature from the official app and may differ
 from your Morphe signing key; see the release notes before installing.
 
@@ -85,7 +85,7 @@ from your Morphe signing key; see the release notes before installing.
 3. Select your original APK/APKM. Reference versions are Crunchyroll mobile
    **3.117.0**, HBO Max **7.9.0.84**, Disney+ **26.14.1+rc2-2026.08.20**, and
    Viki **26.5.0**. HBO Max uses `com.wbd.stream`. Crunchyroll TV **3.74.0** uses
-   its [separate patch](android-tv.md).
+   its [separate patch](android-tv.md), which also supports TV **3.81.0**.
 4. For mobile Crunchyroll, enable **Subtitle styling**, which depends on
    **Aspect ratio control**. For other apps, enable
    **Playback speed and aspect ratio**.

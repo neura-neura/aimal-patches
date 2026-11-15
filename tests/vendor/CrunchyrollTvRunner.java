@@ -144,6 +144,23 @@ public final class CrunchyrollTvRunner extends Instrumentation {
         check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(off),"b"),"g")).isEmpty(),"Actual subtitles-off retained track");
         // Re-select for the end-to-end playback test; already-built item remains immutable.
         values[0]="https://example.test/burned.mpd";constructor.newInstance(values);
+        if (stitched) {
+            Class<?> queueClass=loader.loadClass("com.crunchyroll.player.eventbus.events.Topic$QueueEvent$PrepareQueueStream");
+            Constructor<?> queueConstructor=null;
+            for (Constructor<?> candidate:queueClass.getConstructors()) if(candidate.getParameterCount()==12) queueConstructor=candidate;
+            check(queueConstructor!=null,"Stitched queue constructor missing");
+            for(String direction:new String[]{"NEXT","PREVIOUS"}) {
+                Object queuedSource=Enum.valueOf((Class)source.getClass(),direction);
+                set(cms,"s",Collections.singletonMap(queuedSource,model));
+                Object[] params=new Object[12];Class<?>[] queueTypes=queueConstructor.getParameterTypes();
+                for(int i=0;i<params.length;i++) params[i]=queueTypes[i]==String.class?"":queueTypes[i].isEnum()?queueTypes[i].getEnumConstants()[0]:java.util.List.class.isAssignableFrom(queueTypes[i])?Collections.emptyList():null;
+                params[0]="modern-queued";params[1]="https://example.test/burned.mpd";params[6]=queuedSource;
+                Object queued=queueConstructor.newInstance(params);
+                check(clean.equals(get(queued,"b")) && caption.equals(get(queued,"c")),"Stitched queue lost selected track: "+direction);
+                Object queuedBuilder=builderClass.getConstructor().newInstance();builderClass.getMethod("n",String.class).invoke(queuedBuilder,get(queued,"b"));
+                check(((java.util.List<?>)get(get(builderClass.getMethod("a").invoke(queuedBuilder),"b"),"g")).size()==1,"Stitched queued MediaItem omitted ASS");
+            }
+        }
         // The real Mi Box uses the legacy model: d() exposes captions, while f
         // contains ASS subtitles with no public getter in this optimized APK.
         Object legacy=allocate(loader.loadClass("com.crunchyroll.cms.models.SecureVideoStream"));

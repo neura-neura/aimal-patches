@@ -1,8 +1,9 @@
-# Crunchyroll Android TV 3.74.0
+# Crunchyroll Android TV
 
-**Subtitle styling (Android TV)** adds all 15 Noir style options, a live preview,
+**Subtitle styling (Android TV)** adds all 17 Noir style options, saved styles, a live preview,
 and immediate updates to text subtitles. It targets the TV variant of
-`com.crunchyroll.crunchyroid` **3.74.0 (22364)**. Image cues keep native drawing.
+`com.crunchyroll.crunchyroid` **3.81.0 (22375)** and **3.74.0 (22364)**.
+Use 3.81.0 for new installations. Image cues keep native drawing.
 
 When the selected language has clean video and an external subtitle track,
 the patch uses that pair instead of video with burned-in captions. The original
@@ -13,6 +14,20 @@ burned-in subtitles are available, the original video is preserved.
 The legacy TV flow stores ASS subtitles separately from closed captions. The
 patch reads both maps; reading only closed captions would leave the preview
 working while the episode still showed burned-in subtitles.
+In 3.81.0, the modern player stores burned and external text tracks inside the
+manifest's content element. The patch handles that layout and the updated
+video/queue events, while retaining support for the legacy flow.
+
+## Update prompts
+
+The optional **Disable forced updates (Android TV)** patch supports 3.81.0. It
+skips the local minimum-version check that opens the mandatory-update screen.
+It is included in this fork's ready-to-install 3.81.0 APK. In Morphe, select it
+alongside **Subtitle styling (Android TV)** if you want that behavior.
+
+This does not make an old app compatible with future server changes. If the
+service stops accepting a version, install a newer supported build. Device
+support checks, sign-in, subscription access and playback remain native.
 
 After updating an older patched APK, close and reopen the episode once.
 Subsequent style changes apply immediately, including while playback is paused.
@@ -71,7 +86,7 @@ For an already authorized ADB connection:
 adb -s YOUR_TV_SERIAL install -r "Crunchyroll-TV-patched.apk"
 ```
 
-This fork's [1.4.0 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.4.0)
+This fork's [1.5.0 release](https://github.com/neura-neura/aimal-patches/releases/tag/v1.5.0)
 also provides a signed, ready-to-install TV APK. Choose the file starting with
 `Crunchyroll-TV`; the `Crunchyroll-Android` APK is for phones and tablets.
 The `.mpp` bundle remains available for patching your own APK. Private signing
@@ -79,11 +94,13 @@ keys are not published.
 
 ## Validation
 
-Instrumentation uses the original 3.74.0 classes and ExoPlayer to verify modern
+Instrumentation uses the original 3.74.0 and 3.81.0 classes and ExoPlayer to verify modern
 and legacy routing, ASS tracks with an empty closed-caption map, separate ASS
 playback, paused style updates, cue expiration, and native fallback.
 Queue regression tests cover NEXT/PREVIOUS events before their provider is
 stored, external-track attachment, and isolation between episode IDs.
+The 3.81.0 checks also cover stitched text tracks, its expanded event
+constructors, the pending-provider field, and the disabled local update gate.
 
 The legacy fix was also tested with authenticated playback on a Xiaomi Mi Box 4
 running Android 9. The player received the Spanish ASS track, and the user
@@ -94,6 +111,6 @@ confirmed on the same device, with ASS attachment recorded before the switch.
 To repeat the original-player test on an isolated emulator using your own APK:
 
 ```powershell
-java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling (Android TV)" Crunchyroll-TV-3.74.0.apkm -o patched-tv.apk --unsigned
+java -jar morphe-desktop-1.18.0-all.jar patch -p patches.mpp --exclusive -e "Subtitle styling (Android TV)" -e "Disable forced updates (Android TV)" Crunchyroll-TV-3.81.0.apkm -o patched-tv.apk --unsigned
 python tests/run_vendor_crunchyroll.py --tv --device emulator-5554 --sdk C:/Android/Sdk --apk patched-tv.apk --out C:/Temp/aimal-tv-test
 ```
