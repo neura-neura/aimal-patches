@@ -24,6 +24,11 @@ public final class PlayerActivity extends fixture.TestActivity {
     }
     public static final class LegacyProvider {public LegacyStream g(){return new LegacyStream();}}
     private void verifyRouting() {
+        try {
+            boolean blocked = new com.crunchyroll.core.compatibility.DeviceCompatImpl().a("0.0.1");
+            boolean patched = getPackageManager().getPackageInfo(getPackageName(), 0).versionName.equals("3.81.0");
+            if (blocked == patched) throw new AssertionError("Optional update gate patch changed the wrong fixture version");
+        } catch (android.content.pm.PackageManager.NameNotFoundException impossible) { throw new AssertionError(impossible); }
         com.crunchyroll.cms.component.CMSComponent cms=new com.crunchyroll.cms.component.CMSComponent();
         cms.s.put("CURRENT",new Model());
         com.crunchyroll.player.eventbus.events.Topic.CMSEvent.VideoUrlReady event=new com.crunchyroll.player.eventbus.events.Topic.CMSEvent.VideoUrlReady("https://example.test/burned.mpd","",null,null,null,null,null,null,null,null,null,null,"CURRENT",null,null,null,null,null);

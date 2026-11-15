@@ -10,7 +10,7 @@ import zipfile
 
 p = argparse.ArgumentParser()
 p.add_argument("--sdk", type=Path, required=True)
-p.add_argument("--app", choices=["crunchyroll", "media3", "crunchyroll-tv"], required=True)
+p.add_argument("--app", choices=["crunchyroll", "media3", "crunchyroll-tv", "crunchyroll-tv381"], required=True)
 p.add_argument("--out", type=Path, required=True)
 args = p.parse_args()
 root = Path(__file__).resolve().parents[1]
@@ -25,14 +25,37 @@ classes.mkdir(exist_ok=True)
 def run(*command): subprocess.run([str(value) for value in command], check=True)
 production = list((root / "extensions/extension/src/main/java").rglob("*.java"))
 run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", android, "-d", extensions, *production)
-run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", str(android) + os.pathsep + str(extensions), "-d", classes,
-    *list((root / "tests/fixtures/src").rglob("*.java")))
+sources = list((root / "tests/fixtures/src").rglob("*.java"))
+if args.app == "crunchyroll-tv381":
+    transformed = []
+    for source in sources:
+        if source.name not in ("Topic.java", "PlayerActivity.java"):
+            transformed.append(source)
+            continue
+        text = source.read_text(encoding="utf-8")
+        if source.name == "Topic.java":
+            text = text.replace("Object p18)", "Object p18,Object p19,Object p20)")
+            text = text.replace("Object subtitles)", "Object subtitles,Object stitched,Object skip)")
+        else:
+            for constructor in ("VideoUrlReady", "PrepareQueueStream"):
+                prefix = "new com.crunchyroll.player.eventbus.events.Topic." + ("CMSEvent." if constructor == "VideoUrlReady" else "QueueEvent.") + constructor + "("
+                cursor = 0
+                while (start := text.find(prefix, cursor)) != -1:
+                    end = text.index(")", start)
+                    text = text[:end] + ",null,null" + text[end:]
+                    cursor = end + 11
+        target = out / "shape-src" / source.relative_to(root / "tests/fixtures/src")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+        transformed.append(target)
+    sources = transformed
+run("javac", "-encoding", "UTF-8", "--release", "11", "-cp", str(android) + os.pathsep + str(extensions), "-d", classes, *sources)
 jar = out / "fixture.jar"
 with zipfile.ZipFile(jar, "w") as archive:
     for file in classes.rglob("*.class"): archive.write(file, file.relative_to(classes).as_posix())
 package = "com.crunchyroll.crunchyroid" if args.app.startswith("crunchyroll") else "com.wbd.stream"
-version = "3.74.0" if args.app == "crunchyroll-tv" else ("3.117.0" if args.app == "crunchyroll" else "7.9.0.84")
-activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if args.app == "crunchyroll-tv" else "fixture.TestActivity"
+version = "3.81.0" if args.app == "crunchyroll-tv381" else "3.74.0" if args.app == "crunchyroll-tv" else ("3.117.0" if args.app == "crunchyroll" else "7.9.0.84")
+activity = "com.crunchyroll.crunchyroid.player.ui.PlayerActivity" if args.app.startswith("crunchyroll-tv") else "fixture.TestActivity"
 manifest = out / "AndroidManifest.xml"
 manifest.write_text(f'''<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="{package}" android:versionCode="1" android:versionName="{version}">
 <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="35"/><uses-permission android:name="android.permission.INTERNET"/>
